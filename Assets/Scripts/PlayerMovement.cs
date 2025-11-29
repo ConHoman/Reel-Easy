@@ -1,29 +1,38 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float moveSpeed = 5f;
+    public float speed = 3f;
 
     private Rigidbody2D rb;
-    private Vector2 input;
+    private Animator anim;
+    private SpriteRenderer sr;
+
+    Vector2 input;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
+        anim = GetComponent<Animator>();
+        sr = GetComponent<SpriteRenderer>();
     }
 
     void Update()
     {
-        // Get WASD/Arrow input
         input.x = Input.GetAxisRaw("Horizontal");
         input.y = Input.GetAxisRaw("Vertical");
 
-        input = input.normalized;
+        // Flip for left movement
+        if (input.x < 0) sr.flipX = true;
+        if (input.x > 0) sr.flipX = false;
+
+        anim.SetFloat("MoveX", input.x);
+        anim.SetFloat("MoveY", input.y);
+        anim.SetBool("IsMoving", input.sqrMagnitude > 0.01f);
     }
 
     void FixedUpdate()
     {
-        // Smooth movement
-        rb.MovePosition(rb.position + input * moveSpeed * Time.fixedDeltaTime);
+        rb.MovePosition(rb.position + input * speed * Time.fixedDeltaTime);
     }
 }
