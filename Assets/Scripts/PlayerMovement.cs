@@ -22,9 +22,9 @@ public class PlayerMovement : MonoBehaviour
         input.x = Input.GetAxisRaw("Horizontal");
         input.y = Input.GetAxisRaw("Vertical");
 
-        // Flip for left movement
-        if (input.x < 0) sr.flipX = true;
-        if (input.x > 0) sr.flipX = false;
+        // Correct flipping for LEFT-facing default animations
+        if (input.x < 0) sr.flipX = false; // moving left = normal orientation
+        if (input.x > 0) sr.flipX = true;  // moving right = flipped
 
         anim.SetFloat("MoveX", input.x);
         anim.SetFloat("MoveY", input.y);
