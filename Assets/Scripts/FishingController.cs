@@ -9,9 +9,9 @@ public class FishingController : MonoBehaviour
     public Tilemap waterTilemap;   // drag your WaterTilemap here in Inspector
 
     [Header("Settings")]
-    public float castDistance = 0.6f;
+    public float castDistance = 1.5f;
     public float minBiteTime = 1f;
-    public float maxBiteTime = 2.5f;
+    public float maxBiteTime = 10f;
 
     private PlayerMovement movement;
     private bool isFishing = false;
