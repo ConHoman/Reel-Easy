@@ -1,17 +1,15 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.Tilemaps;   // IMPORTANT for Tilemap
+using UnityEngine.Tilemaps;
 
 public class FishingController : MonoBehaviour
 {
-    [Header("References")]
     public GameObject bobberPrefab;
-    public Tilemap waterTilemap;   // drag your WaterTilemap here in Inspector
+    public Tilemap waterTilemap;
 
-    [Header("Settings")]
-    public float castDistance = 1.5f;
+    public float castDistance = 0.6f;
     public float minBiteTime = 1f;
-    public float maxBiteTime = 10f;
+    public float maxBiteTime = 2.5f;
 
     private PlayerMovement movement;
     private bool isFishing = false;
@@ -31,12 +29,10 @@ public class FishingController : MonoBehaviour
 
     void TryToFish()
     {
-        // which way are we facing?
         Vector2 lookDir = movement.lastMoveDir;
         if (lookDir == Vector2.zero)
             lookDir = Vector2.down;
 
-        // world position in front of player
         Vector2 castPos = (Vector2)transform.position + lookDir * castDistance;
 
         if (IsWaterAt(castPos))
@@ -53,14 +49,11 @@ public class FishingController : MonoBehaviour
     {
         if (waterTilemap == null)
         {
-            Debug.LogWarning("No waterTilemap assigned on FishingController!");
+            Debug.LogWarning("No water tilemap assigned!");
             return false;
         }
 
-        // convert world position to tile cell
         Vector3Int cellPos = waterTilemap.WorldToCell(worldPos);
-
-        // true if there is a tile on the water tilemap at that cell
         return waterTilemap.HasTile(cellPos);
     }
 
@@ -68,14 +61,21 @@ public class FishingController : MonoBehaviour
     {
         isFishing = true;
 
+        // NEW: stop movement while fishing
+        movement.canMove = false;
+
         GameObject bobber = Instantiate(bobberPrefab, spawnPos, Quaternion.identity);
 
-        float waitTime = Random.Range(minBiteTime, maxBiteTime);
-        yield return new WaitForSeconds(waitTime);
+        float wait = Random.Range(minBiteTime, maxBiteTime);
+        yield return new WaitForSeconds(wait);
 
         Debug.Log("You caught a fish!");
 
         Destroy(bobber);
+
+        // NEW: re-enable movement
+        movement.canMove = true;
+
         isFishing = false;
     }
 }

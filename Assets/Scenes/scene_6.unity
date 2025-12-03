@@ -13306,9 +13306,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   bobberPrefab: {fileID: 8670902195150681194, guid: dce6d67d590de344f8ccaa980070af3b, type: 3}
   waterTilemap: {fileID: 301516574}
-  castDistance: 0.6
+  castDistance: 1.5
   minBiteTime: 1
-  maxBiteTime: 2.5
+  maxBiteTime: 10
 --- !u!1 &1600824229
 GameObject:
   m_ObjectHideFlags: 0

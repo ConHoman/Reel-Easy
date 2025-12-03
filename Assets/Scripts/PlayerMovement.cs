@@ -13,6 +13,9 @@ public class PlayerMovement : MonoBehaviour
     // Remember which way the player is facing
     public Vector2 lastMoveDir = Vector2.down;
 
+    // NEW: allows fishing to disable movement
+    public bool canMove = true;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -22,19 +25,26 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
-        // Raw movement input
-        input.x = Input.GetAxisRaw("Horizontal");
-        input.y = Input.GetAxisRaw("Vertical");
+        // Only allow movement if canMove is true
+        if (canMove)
+        {
+            input.x = Input.GetAxisRaw("Horizontal");
+            input.y = Input.GetAxisRaw("Vertical");
+        }
+        else
+        {
+            input = Vector2.zero; // freeze movement
+        }
 
         bool isMoving = input.sqrMagnitude > 0.01f;
 
-        // Update facing direction only while moving
+        // Update facing direction when moving
         if (isMoving)
         {
             lastMoveDir = input.normalized;
         }
 
-        // Sprite flipping (based on movement X)
+        // Sprite flipping
         if (input.x < 0) sr.flipX = false;
         if (input.x > 0) sr.flipX = true;
 
@@ -43,13 +53,11 @@ public class PlayerMovement : MonoBehaviour
 
         if (isMoving)
         {
-            // Use input while moving
             anim.SetFloat("MoveX", input.x);
             anim.SetFloat("MoveY", input.y);
         }
         else
         {
-            // Use lastMoveDir while standing still
             anim.SetFloat("MoveX", lastMoveDir.x);
             anim.SetFloat("MoveY", lastMoveDir.y);
         }
@@ -57,7 +65,6 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Movement
         rb.MovePosition(rb.position + input * speed * Time.fixedDeltaTime);
     }
 }
