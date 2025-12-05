@@ -50,7 +50,11 @@ public class BubbleGameManager : MonoBehaviour
 
     IEnumerator BubbleLoop()
     {
-        // Panel dimensions
+        // Force correct panel pivot/anchors so bubble positions aren't skewed
+        panel.pivot = new Vector2(0.5f, 0.5f);
+        panel.anchorMin = new Vector2(0.5f, 0.5f);
+        panel.anchorMax = new Vector2(0.5f, 0.5f);
+
         float panelW = panel.rect.width;
         float panelH = panel.rect.height;
 
@@ -59,20 +63,14 @@ public class BubbleGameManager : MonoBehaviour
             GameObject bubble = Instantiate(bubblePrefab, panel);
             RectTransform rt = bubble.GetComponent<RectTransform>();
 
-            // Bubble size
             float halfW = rt.rect.width * 0.5f;
             float halfH = rt.rect.height * 0.5f;
 
-            // Spawn safely inside panel
-            float xMin = halfW;
-            float xMax = panelW - halfW;
-            float yMin = halfH;
-            float yMax = panelH - halfH;
+            // NEW — spawn centered, not just top-right
+            float x = Random.Range(-panelW / 2 + halfW, panelW / 2 - halfW);
+            float y = Random.Range(-panelH / 2 + halfH, panelH / 2 - halfH);
 
-            rt.anchoredPosition = new Vector2(
-                Random.Range(xMin, xMax),
-                Random.Range(yMin, yMax)
-            );
+            rt.anchoredPosition = new Vector2(x, y);
 
             bool poppedThisBubble = false;
             float life = 1.2f;
