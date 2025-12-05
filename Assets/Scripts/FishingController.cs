@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -6,13 +6,19 @@ public class FishingController : MonoBehaviour
 {
     public GameObject bobberPrefab;
     public Tilemap waterTilemap;
+    public BubbleGameManager bubbleGameManager;
 
     public float castDistance = 0.6f;
     public float minBiteTime = 1f;
     public float maxBiteTime = 2.5f;
 
+    public GameObject activeBobber;
+
     private PlayerMovement movement;
     private bool isFishing = false;
+
+    // Reference to popup object in the scene
+    public FishCaughtPopup fishPopup;
 
     void Start()
     {
@@ -60,22 +66,68 @@ public class FishingController : MonoBehaviour
     IEnumerator FishRoutine(Vector2 spawnPos)
     {
         isFishing = true;
-
-        // NEW: stop movement while fishing
         movement.canMove = false;
 
-        GameObject bobber = Instantiate(bobberPrefab, spawnPos, Quaternion.identity);
+        // Create bobber object and store reference
+        activeBobber = Instantiate(bobberPrefab, spawnPos, Quaternion.identity);
 
         float wait = Random.Range(minBiteTime, maxBiteTime);
         yield return new WaitForSeconds(wait);
 
-        Debug.Log("You caught a fish!");
+        Debug.Log("Fish bite! Starting minigame...");
 
-        Destroy(bobber);
+        bubbleGameManager.StartBubbleGame();
+    }
 
-        // NEW: re-enable movement
-        movement.canMove = true;
+    // ============================================================
+    // CALLED BY THE MINIGAME 
+    // ============================================================
+
+    public void CatchFishSuccess()
+    {
+        Debug.Log("🎣 Fish Caught!");
+
+        // Pick a random fish sprite
+        Sprite caughtFish = null;
+
+        if (FishInventory.Instance != null &&
+            FishInventory.Instance.fishSprites.Length > 0)
+        {
+            int r = Random.Range(0, FishInventory.Instance.fishSprites.Length);
+            caughtFish = FishInventory.Instance.fishSprites[r];
+        }
+
+        // Add fish to inventory
+        if (caughtFish != null)
+            FishInventory.Instance.AddFish(caughtFish);
+
+        // Show popup above player
+        if (fishPopup != null)
+        {
+            Debug.Log("Showing popup!");
+            fishPopup.ShowMessage("Caught a " + caughtFish.name + "!");
+        }
+        else
+        {
+            Debug.LogError("FishPopup IS NOT ASSIGNED in the Inspector!");
+        }
+
+        // Remove bobber
+        if (activeBobber != null)
+            Destroy(activeBobber);
 
         isFishing = false;
+        movement.canMove = true;
+    }
+
+    public void CatchFishFail()
+    {
+        Debug.Log("🐟 Fish Escaped...");
+
+        if (activeBobber != null)
+            Destroy(activeBobber);
+
+        isFishing = false;
+        movement.canMove = true;
     }
 }
