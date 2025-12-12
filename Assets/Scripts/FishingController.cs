@@ -101,15 +101,14 @@ public class FishingController : MonoBehaviour
         if (caughtFish != null)
             FishInventory.Instance.AddFish(caughtFish);
 
+        // 🔹 QUEST PROGRESS
+        if (QuestManager.Instance != null)
+            QuestManager.Instance.FishCaught();
+
         // Show popup above player
         if (fishPopup != null)
         {
-            Debug.Log("Showing popup!");
             fishPopup.ShowMessage("Caught a " + caughtFish.name + "!");
-        }
-        else
-        {
-            Debug.LogError("FishPopup IS NOT ASSIGNED in the Inspector!");
         }
 
         // Remove bobber
@@ -123,6 +122,10 @@ public class FishingController : MonoBehaviour
     public void CatchFishFail()
     {
         Debug.Log("🐟 Fish Escaped...");
+
+        // 🔹 QUEST FAIL COUNT
+        if (QuestManager.Instance != null)
+            QuestManager.Instance.FishFailed();
 
         if (activeBobber != null)
             Destroy(activeBobber);
