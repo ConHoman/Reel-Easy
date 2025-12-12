@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 public class TitleScreen : MonoBehaviour
 {
-    public string sceneToLoad = "scene_9"; // change this to your actual gameplay scene name
+    public string sceneToLoad = "scene_8"; // change this to your actual gameplay scene name
 
     void Update()
     {
