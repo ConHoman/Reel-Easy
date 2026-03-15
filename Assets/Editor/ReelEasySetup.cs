@@ -367,6 +367,17 @@ public static class ReelEasySetup
     }
 
     // ─────────────────────────────────────────────────────────
+    // DEV TOOLS
+    // ─────────────────────────────────────────────────────────
+    [MenuItem("Reel Easy/Dev - Clear Fish Journal (reset ???)")]
+    static void ClearFishJournal()
+    {
+        PlayerPrefs.DeleteKey("FishJournal_v1");
+        PlayerPrefs.Save();
+        Debug.Log("[Reel Easy] Fish journal cleared — all fish will show as ??? until caught again.");
+    }
+
+    // ─────────────────────────────────────────────────────────
     // RUN ALL
     // ─────────────────────────────────────────────────────────
     [MenuItem("Reel Easy/Run Full Setup")]

@@ -12,8 +12,17 @@ public class FishJournal : MonoBehaviour
 
     void Awake()
     {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
         Instance = this;
+        DontDestroyOnLoad(gameObject);
         Load();
+    }
+
+    // Called at startup by any script that needs the journal to exist
+    public static void EnsureExists()
+    {
+        if (Instance == null)
+            new GameObject("FishJournal").AddComponent<FishJournal>();
     }
 
     public bool IsDiscovered(string fishName) => discovered.Contains(fishName);

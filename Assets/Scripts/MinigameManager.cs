@@ -32,6 +32,7 @@ public class MinigameManager : MonoBehaviour
     {
         if (fishingController == null)
             fishingController = FindObjectOfType<FishingController>();
+        FishJournal.EnsureExists();
     }
 
     // Called by LineController at the START of the snake phase
