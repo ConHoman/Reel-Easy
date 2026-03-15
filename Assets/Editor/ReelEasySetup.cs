@@ -185,6 +185,11 @@ public static class ReelEasySetup
             if (bubblePrefab != null) minigame.bubblePrefab = bubblePrefab;
         }
 
+        // Wire fishingController early so it's always set regardless of player block below
+        FishingController fcEarly = Object.FindObjectOfType<FishingController>();
+        if (fcEarly != null)
+            minigame.fishingController = fcEarly;
+
         // ── RunManager UI ──────────────────────────────────────
         if (runManager.runInfoText == null)
         {

@@ -137,9 +137,22 @@ public class MinigameManager : MonoBehaviour
     {
         panel.gameObject.SetActive(false);
 
+        if (fishingController == null)
+        {
+            Debug.LogError("MinigameManager: fishingController is not assigned! Run Reel Easy > 3. Setup Scene.");
+            return;
+        }
+
         if (popped >= bubblesNeeded)
-            fishingController.CatchFishSuccess(currentFish ?? new System.Collections.Generic.List<FishData>());
+        {
+            var caught = currentFish ?? new System.Collections.Generic.List<FishData>();
+            if (caught.Count == 0)
+                Debug.Log("Minigame won but no fish were hooked — cast again!");
+            fishingController.CatchFishSuccess(caught);
+        }
         else
+        {
             fishingController.CatchFishFail();
+        }
     }
 }
