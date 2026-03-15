@@ -271,7 +271,7 @@ public static class ReelEasySetup
                     anchor: new Vector2(0.5f, 1f), pivot: new Vector2(0.5f, 1f),
                     pos: new Vector2(0, -10), size: new Vector2(300, 60));
                 cd.alignment = TextAlignmentOptions.Center;
-                cd.fontSize = 36;
+                cd.fontSize = 14;
 
                 TMP_Text info = CreateTMPText(mgPanel.transform, "HookedInfoText",
                     anchor: new Vector2(0.5f, 0f), pivot: new Vector2(0.5f, 0f),

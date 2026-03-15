@@ -43,6 +43,7 @@ public class MinigameManager : MonoBehaviour
         // Hide background during steer phase so it's just floating text
         var bg = panel.GetComponent<UnityEngine.UI.Image>();
         if (bg != null) bg.enabled = false;
+        if (countdownText != null) countdownText.fontSize = 14;
         if (hookedInfoText != null) hookedInfoText.text = "Move the bobber with WASD!";
         StartCoroutine(SteerCountdown(duration));
     }
