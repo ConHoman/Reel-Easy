@@ -29,13 +29,8 @@ public class SettingsManager : MonoBehaviour
 
     void BuildUI()
     {
-        Canvas canvas = FindObjectOfType<Canvas>();
+        Canvas canvas = UICanvas.Get();
         if (canvas == null) return;
-
-        // Render UI in overlay mode so TMP text isn't filtered through
-        // the pixel-perfect camera (which causes blocky/pixelated text)
-        if (canvas.renderMode != RenderMode.ScreenSpaceOverlay)
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
 
 
         // ── Settings panel (hidden by default) ───────────────

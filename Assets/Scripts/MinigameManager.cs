@@ -36,6 +36,11 @@ public class MinigameManager : MonoBehaviour
             fishingController = FindObjectOfType<FishingController>();
         FishJournal.EnsureExists();
         SettingsManager.EnsureExists();
+
+        // Re-parent minigame panel to the dedicated UI canvas so TMP text
+        // renders after the Pixel Perfect Camera pass and stays sharp.
+        if (panel != null)
+            panel.SetParent(UICanvas.Get().transform, false);
     }
 
     // Called by LineController at the START of the snake phase
@@ -61,7 +66,7 @@ public class MinigameManager : MonoBehaviour
         // Auto-create hintText if not set
         if (hintText == null)
         {
-            Canvas canvas = FindObjectOfType<Canvas>();
+            Canvas canvas = UICanvas.Get();
             if (canvas != null)
             {
                 var hintGO = new GameObject("HintText");

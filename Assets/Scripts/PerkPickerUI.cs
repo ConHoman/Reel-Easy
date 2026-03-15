@@ -63,7 +63,7 @@ public class PerkPickerUI : MonoBehaviour
             return;
         }
 
-        Canvas canvas = FindObjectOfType<Canvas>();
+        Canvas canvas = UICanvas.Get();
 
         pickerPanel = new GameObject("PerkPickerPanel");
         pickerPanel.transform.SetParent(canvas.transform, false);
