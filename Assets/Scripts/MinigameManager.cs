@@ -28,57 +28,69 @@ public class MinigameManager : MonoBehaviour
     private int missed;
     private List<FishData> currentFish;
 
+    // Called by LineController at the START of the snake phase
+    // Shows a live countdown so the player knows to steer NOW
+    public void BeginSteerPhase(float duration)
+    {
+        panel.gameObject.SetActive(true);
+        if (hookedInfoText != null) hookedInfoText.text = "Steer with WASD to hook fish!";
+        StartCoroutine(SteerCountdown(duration));
+    }
+
+    IEnumerator SteerCountdown(float duration)
+    {
+        if (countdownText != null) countdownText.enabled = true;
+        float t = duration;
+        while (t > 0f)
+        {
+            if (countdownText != null)
+                countdownText.text = "STEER! " + Mathf.CeilToInt(t);
+            t -= Time.deltaTime;
+            yield return null;
+        }
+        if (countdownText != null)
+        {
+            countdownText.text = "REEL!";
+            yield return new WaitForSeconds(0.4f);
+            countdownText.enabled = false;
+        }
+    }
+
     public void StartMinigame(List<FishData> hookedFish)
     {
         currentFish = hookedFish;
 
         if (hookedFish.Count == 0)
         {
-            // Nothing hooked — start a basic minigame anyway so casting always does something
             bubblesNeeded = baseBubblesNeeded;
             bubbleLifetime = baseBubbleLifetime;
-            StartCoroutine(StartSequence());
-            return;
+        }
+        else
+        {
+            int totalDifficulty = 0;
+            foreach (FishData f in hookedFish) totalDifficulty += f.difficulty;
+            bubblesNeeded = baseBubblesNeeded + totalDifficulty;
+            bubbleLifetime = Mathf.Max(minBubbleLifetime, baseBubbleLifetime - (totalDifficulty * lifetimeReductionPerDifficulty));
         }
 
-        int totalDifficulty = 0;
-        foreach (FishData f in hookedFish)
-            totalDifficulty += f.difficulty;
-
-        bubblesNeeded = baseBubblesNeeded + totalDifficulty;
-        bubbleLifetime = Mathf.Max(minBubbleLifetime, baseBubbleLifetime - (totalDifficulty * lifetimeReductionPerDifficulty));
-
-        StartCoroutine(StartSequence());
-    }
-
-    IEnumerator StartSequence()
-    {
-        panel.gameObject.SetActive(true);
-
+        // Update hooked info text then go straight to bubbles — no second countdown
         if (hookedInfoText != null)
         {
-            string names = "";
-            foreach (FishData f in currentFish)
-                names += f.fishName + " ";
-            hookedInfoText.text = "Hooked: " + names.Trim();
+            if (hookedFish.Count == 0)
+            {
+                hookedInfoText.text = "Nothing hooked!";
+            }
+            else
+            {
+                string names = "";
+                foreach (FishData f in hookedFish) names += f.fishName + " ";
+                hookedInfoText.text = "Hooked: " + names.Trim();
+            }
         }
 
-        countdownText.enabled = true;
-
-        countdownText.text = "3..";
-        yield return new WaitForSeconds(1f);
-        countdownText.text = "2..";
-        yield return new WaitForSeconds(1f);
-        countdownText.text = "1..";
-        yield return new WaitForSeconds(1f);
-        countdownText.text = "REEL!";
-        yield return new WaitForSeconds(0.5f);
-
-        countdownText.enabled = false;
-
+        panel.gameObject.SetActive(true);
         popped = 0;
         missed = 0;
-
         StartCoroutine(BubbleLoop());
     }
 

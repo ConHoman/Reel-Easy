@@ -63,13 +63,23 @@ public class LineController : MonoBehaviour
 
         lineTip = Instantiate(lineTipPrefab, startPos, Quaternion.identity);
 
+        // Scale up the tip so it's visible and easier to hook fish with
+        lineTip.transform.localScale = Vector3.one * 0.5f;
+
         // Rigidbody2D required for OnTriggerEnter2D to fire
         Rigidbody2D tipRb = lineTip.GetComponent<Rigidbody2D>();
         if (tipRb == null) tipRb = lineTip.AddComponent<Rigidbody2D>();
         tipRb.isKinematic = true;
         tipRb.gravityScale = 0f;
 
+        // Enlarge collider so hooking fish is easier
+        CircleCollider2D tipCol = lineTip.GetComponent<CircleCollider2D>();
+        if (tipCol != null) tipCol.radius = 0.4f;
+
         lineRenderer.enabled = true;
+
+        // Tell the minigame panel to show the steering countdown
+        minigameManager.BeginSteerPhase(phaseDuration);
 
         float timer = phaseDuration;
 
