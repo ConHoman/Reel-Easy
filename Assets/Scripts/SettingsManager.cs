@@ -32,6 +32,13 @@ public class SettingsManager : MonoBehaviour
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
+        // Fix Canvas Scaler so TMP fonts render sharply
+        var scaler = canvas.GetComponent<CanvasScaler>();
+        if (scaler == null) scaler = canvas.gameObject.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(800f, 600f);
+        scaler.matchWidthOrHeight = 0.5f;
+
         // ── Settings panel (hidden by default) ───────────────
         settingsPanel = new GameObject("SettingsPanel");
         settingsPanel.transform.SetParent(canvas.transform, false);
