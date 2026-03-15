@@ -314,7 +314,7 @@ public static class ReelEasySetup
     // ─────────────────────────────────────────────────────────
     // CLEANUP — disable old QuestManager UI leftovers
     // ─────────────────────────────────────────────────────────
-    [MenuItem("Reel Easy/Fix - Hide Old Quest UI")]
+    [MenuItem("Reel Easy/Fix - Clean Up Old GameObjects")]
     static void HideOldQuestUI()
     {
         int fixed_ = 0;
@@ -328,7 +328,7 @@ public static class ReelEasySetup
             fixed_++;
         }
 
-        // Old quest text (the "Quest: Catch Fish" label)
+        // Old quest text
         GameObject oldQuestText = GameObject.Find("QuestText");
         if (oldQuestText != null)
         {
@@ -337,8 +337,21 @@ public static class ReelEasySetup
             fixed_++;
         }
 
+        // Remove old GameObjects whose scripts were deleted (BubbleGameManager, QuestManager)
+        string[] oldGoNames = { "BubbleGameManager", "QuestManager" };
+        foreach (string goName in oldGoNames)
+        {
+            GameObject old = GameObject.Find(goName);
+            if (old != null)
+            {
+                Object.DestroyImmediate(old);
+                Debug.Log("[Reel Easy] Removed old GameObject: " + goName);
+                fixed_++;
+            }
+        }
+
         if (fixed_ == 0)
-            Debug.Log("[Reel Easy] No old quest UI found — nothing to clean up.");
+            Debug.Log("[Reel Easy] No old objects found — nothing to clean up.");
 
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveOpenScenes();

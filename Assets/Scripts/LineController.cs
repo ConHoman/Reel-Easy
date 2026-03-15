@@ -62,6 +62,13 @@ public class LineController : MonoBehaviour
         phaseActive = true;
 
         lineTip = Instantiate(lineTipPrefab, startPos, Quaternion.identity);
+
+        // Rigidbody2D required for OnTriggerEnter2D to fire
+        Rigidbody2D tipRb = lineTip.GetComponent<Rigidbody2D>();
+        if (tipRb == null) tipRb = lineTip.AddComponent<Rigidbody2D>();
+        tipRb.isKinematic = true;
+        tipRb.gravityScale = 0f;
+
         lineRenderer.enabled = true;
 
         float timer = phaseDuration;
