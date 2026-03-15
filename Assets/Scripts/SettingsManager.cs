@@ -32,6 +32,11 @@ public class SettingsManager : MonoBehaviour
         Canvas canvas = FindObjectOfType<Canvas>();
         if (canvas == null) return;
 
+        // Render UI in overlay mode so TMP text isn't filtered through
+        // the pixel-perfect camera (which causes blocky/pixelated text)
+        if (canvas.renderMode != RenderMode.ScreenSpaceOverlay)
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
 
         // ── Settings panel (hidden by default) ───────────────
         settingsPanel = new GameObject("SettingsPanel");
