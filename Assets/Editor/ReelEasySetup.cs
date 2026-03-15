@@ -151,6 +151,9 @@ public static class ReelEasySetup
         FishSpawner fishSpawner = FindOrCreate<FishSpawner>("FishSpawner");
         MinigameManager minigame = FindOrCreate<MinigameManager>("MinigameManager");
         FindOrCreate<FishJournal>("FishJournal");
+        FindOrCreate<PerkManager>("PerkManager");
+        FindOrCreate<PerkPickerUI>("PerkPickerUI");
+        FindOrCreate<SettingsManager>("SettingsManager");
 
         // ── FishSpawner wiring ─────────────────────────────────
         if (fishSpawner.fishPrefab == null)

@@ -94,6 +94,9 @@ public class FishingController : MonoBehaviour
                 fishPopup.ShowMessage("Caught a " + fish.fishName + "!");
         }
 
+        if (caughtFish.Count > 0 && RunManager.Instance != null)
+            RunManager.Instance.NotifySuccessfulCast();
+
         isFishing = false;
         movement.canMove = true;
     }

@@ -14,6 +14,7 @@ public class MinigameManager : MonoBehaviour
     public RectTransform panel;
     public TMP_Text countdownText;
     public TMP_Text hookedInfoText; // optional: shows what fish are hooked
+    public TMP_Text hintText; // small text at bottom of screen, created at runtime
 
     [Header("Base Difficulty")]
     public int baseBubblesNeeded = 2;
@@ -26,6 +27,7 @@ public class MinigameManager : MonoBehaviour
     private float bubbleLifetime;
     private int popped;
     private int missed;
+    private int currentAllowedMisses;
     private List<FishData> currentFish;
 
     void Awake()
@@ -33,38 +35,67 @@ public class MinigameManager : MonoBehaviour
         if (fishingController == null)
             fishingController = FindObjectOfType<FishingController>();
         FishJournal.EnsureExists();
+        SettingsManager.EnsureExists();
     }
 
     // Called by LineController at the START of the snake phase
     // Shows a live countdown so the player knows to steer NOW
     public void BeginSteerPhase(float duration)
     {
-        panel.gameObject.SetActive(true);
         // Hide background during steer phase so it's just floating text
-        var bg = panel.GetComponent<UnityEngine.UI.Image>();
-        if (bg != null) bg.enabled = false;
-        if (countdownText != null) countdownText.fontSize = 14;
+        if (panel != null)
+        {
+            panel.gameObject.SetActive(true);
+            var bg = panel.GetComponent<UnityEngine.UI.Image>();
+            if (bg != null) bg.enabled = false;
+        }
+        if (countdownText != null) countdownText.enabled = false;
         if (hookedInfoText != null) hookedInfoText.text = "Move the bobber with WASD!";
+
+        // Auto-create hintText if not set
+        if (hintText == null)
+        {
+            Canvas canvas = FindObjectOfType<Canvas>();
+            if (canvas != null)
+            {
+                var hintGO = new GameObject("HintText");
+                hintGO.transform.SetParent(canvas.transform, false);
+                hintText = hintGO.AddComponent<TMPro.TextMeshProUGUI>();
+                hintText.fontSize = 11f;
+                hintText.alignment = TMPro.TextAlignmentOptions.Center;
+                hintText.color = Color.white;
+                var hintRT = hintGO.GetComponent<RectTransform>();
+                hintRT.anchorMin = new Vector2(0.2f, 0f);
+                hintRT.anchorMax = new Vector2(0.8f, 0.12f);
+                hintRT.offsetMin = hintRT.offsetMax = Vector2.zero;
+            }
+        }
+
         StartCoroutine(SteerCountdown(duration));
     }
 
     IEnumerator SteerCountdown(float duration)
     {
-        if (countdownText != null) countdownText.enabled = true;
         float t = duration;
         while (t > 0f)
         {
-            if (countdownText != null)
-                countdownText.text = "STEER! " + Mathf.CeilToInt(t);
+            if (hintText != null && SettingsManager.ShowHints)
+            {
+                hintText.text = "STEER  " + Mathf.CeilToInt(t);
+                hintText.enabled = true;
+            }
+            else if (hintText != null)
+                hintText.enabled = false;
             t -= Time.deltaTime;
             yield return null;
         }
-        if (countdownText != null)
+        if (hintText != null && SettingsManager.ShowHints)
         {
-            countdownText.text = "REEL!";
+            hintText.text = "REEL!";
+            hintText.enabled = true;
             yield return new WaitForSeconds(0.4f);
-            countdownText.enabled = false;
         }
+        if (hintText != null) hintText.enabled = false;
     }
 
     public void StartMinigame(List<FishData> hookedFish)
@@ -83,6 +114,14 @@ public class MinigameManager : MonoBehaviour
             bubblesNeeded = baseBubblesNeeded + totalDifficulty;
             bubbleLifetime = Mathf.Max(minBubbleLifetime, baseBubbleLifetime - (totalDifficulty * lifetimeReductionPerDifficulty));
         }
+
+        if (PerkManager.Instance != null)
+        {
+            bubblesNeeded += PerkManager.Instance.ExtraBubblesPerFish * hookedFish.Count;
+            bubblesNeeded = Mathf.Max(bubblesNeeded, PerkManager.Instance.MinBubbles);
+            currentAllowedMisses = allowedMisses + PerkManager.Instance.AllowedMissesBonus;
+        }
+        else currentAllowedMisses = allowedMisses;
 
         // Update hooked info text then go straight to bubbles — no second countdown
         if (hookedInfoText != null)
@@ -119,7 +158,7 @@ public class MinigameManager : MonoBehaviour
         float panelW = panel.rect.width;
         float panelH = panel.rect.height;
 
-        while (popped < bubblesNeeded && missed < allowedMisses)
+        while (popped < bubblesNeeded && missed < currentAllowedMisses)
         {
             GameObject bubble = Instantiate(bubblePrefab, panel);
             RectTransform rt = bubble.GetComponent<RectTransform>();

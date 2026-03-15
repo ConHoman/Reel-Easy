@@ -23,6 +23,7 @@ public class RunManager : MonoBehaviour
     int fishCaught;
     string bestFishName = "None";
     int bestFishScore = 0;
+    private int successfulCasts;
 
     void Awake()
     {
@@ -41,6 +42,8 @@ public class RunManager : MonoBehaviour
         // Hide any leftover game over panel from the old QuestManager
         GameObject oldPanel = GameObject.Find("GameOverPanel");
         if (oldPanel != null) oldPanel.SetActive(false);
+
+        PerkManager.EnsureExists(); PerkPickerUI.EnsureExists(); SettingsManager.EnsureExists();
     }
 
     void Start()
@@ -55,6 +58,8 @@ public class RunManager : MonoBehaviour
         fishCaught = 0;
         bestFishName = "None";
         bestFishScore = 0;
+        successfulCasts = 0;
+        if (PerkManager.Instance != null) PerkManager.Instance.ResetForRun();
 
         if (runOverPanel != null) runOverPanel.SetActive(false);
         if (fishInventory != null) fishInventory.ResetInventory();
@@ -67,18 +72,17 @@ public class RunManager : MonoBehaviour
     public void OnFishCaught(FishData fish)
     {
         fishCaught++;
-        runScore += fish.scoreValue;
-        if (fish.scoreValue > bestFishScore)
-        {
-            bestFishScore = fish.scoreValue;
-            bestFishName = fish.fishName;
-        }
+        int score = PerkManager.Instance != null ? PerkManager.Instance.GetScoreForFish(fish) : fish.scoreValue;
+        runScore += score;
+        if (score > bestFishScore) { bestFishScore = score; bestFishName = fish.fishName; }
         UpdateUI();
     }
 
     public void LineSnapped()
     {
-        linesRemaining--;
+        if (PerkManager.Instance != null && PerkManager.Instance.TryConsumeLuckyLine()) { UpdateUI(); return; }
+        int linesLost = PerkManager.Instance != null ? PerkManager.Instance.LinesLostOnSnap : 1;
+        linesRemaining -= linesLost;
         UpdateUI();
         if (linesRemaining <= 0)
             EndRun();
@@ -98,6 +102,25 @@ public class RunManager : MonoBehaviour
                 "Best Catch: " + bestFishName;
 
         Time.timeScale = 0f;
+    }
+
+    public void NotifySuccessfulCast()
+    {
+        successfulCasts++;
+        if (successfulCasts % 3 == 0 && PerkPickerUI.Instance != null)
+            PerkPickerUI.Instance.ShowPicker();
+    }
+
+    public void AddLine()
+    {
+        linesRemaining++;
+        UpdateUI();
+    }
+
+    public void RemoveLine()
+    {
+        linesRemaining = Mathf.Max(1, linesRemaining - 1);
+        UpdateUI();
     }
 
     void UpdateUI()

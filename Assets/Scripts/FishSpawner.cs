@@ -47,13 +47,14 @@ public class FishSpawner : MonoBehaviour
         }
 
         // Collect water tiles within spawnRadius of the cast point
+        float effectiveRadius = spawnRadius * (PerkManager.Instance != null ? PerkManager.Instance.SpawnRadiusMultiplier : 1f);
         List<Vector3> nearby = new List<Vector3>();
         BoundsInt bounds = waterTilemap.cellBounds;
         foreach (Vector3Int pos in bounds.allPositionsWithin)
         {
             if (!waterTilemap.HasTile(pos)) continue;
             Vector3 worldPos = waterTilemap.CellToWorld(pos) + new Vector3(0.5f, 0.5f, 0);
-            if (Vector2.Distance(worldPos, center) <= spawnRadius)
+            if (Vector2.Distance(worldPos, center) <= effectiveRadius)
                 nearby.Add(worldPos);
         }
 
@@ -72,7 +73,8 @@ public class FishSpawner : MonoBehaviour
                 weightedPool.Add(fd);
         }
 
-        int count = Mathf.Min(Random.Range(minSpawnCount, maxSpawnCount + 1), nearby.Count);
+        int spawnBonus = PerkManager.Instance != null ? PerkManager.Instance.SpawnCountBonus : 0;
+        int count = Mathf.Min(Random.Range(minSpawnCount, maxSpawnCount + 1) + spawnBonus, nearby.Count);
         for (int i = 0; i < count; i++)
         {
             int idx = Random.Range(0, nearby.Count);

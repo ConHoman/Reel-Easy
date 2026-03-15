@@ -85,14 +85,14 @@ public class LineController : MonoBehaviour
         CircleCollider2D tipCol = lineTip.GetComponent<CircleCollider2D>();
         if (tipCol == null) tipCol = lineTip.AddComponent<CircleCollider2D>();
         tipCol.isTrigger = true;
-        tipCol.radius = 0.35f;
+        tipCol.radius = 0.35f * (PerkManager.Instance != null ? PerkManager.Instance.HitboxMultiplier : 1f);
 
         lineRenderer.enabled = true;
 
-        // Tell the minigame panel to show the steering countdown
-        minigameManager.BeginSteerPhase(phaseDuration);
+        float timer = phaseDuration * (PerkManager.Instance != null ? PerkManager.Instance.SteerDurationMultiplier : 1f);
 
-        float timer = phaseDuration;
+        // Tell the minigame panel to show the steering countdown
+        minigameManager.BeginSteerPhase(timer);
 
         while (timer > 0f && phaseActive)
         {
@@ -100,7 +100,7 @@ public class LineController : MonoBehaviour
             float my = Input.GetAxisRaw("Vertical");
             Vector2 dir = new Vector2(mx, my).normalized;
 
-            Vector3 newPos = lineTip.transform.position + (Vector3)(dir * tipSpeed * Time.deltaTime);
+            Vector3 newPos = lineTip.transform.position + (Vector3)(dir * tipSpeed * (PerkManager.Instance != null ? PerkManager.Instance.TipSpeedMultiplier : 1f) * Time.deltaTime);
 
             // Clamp to maxLineLength from cast point
             Vector2 offset = (Vector2)newPos - startPos;
