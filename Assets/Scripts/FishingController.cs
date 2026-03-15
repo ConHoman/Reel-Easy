@@ -1,24 +1,17 @@
-﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
 public class FishingController : MonoBehaviour
 {
-    public GameObject bobberPrefab;
     public Tilemap waterTilemap;
-    public BubbleGameManager bubbleGameManager;
+    public LineController lineController;
+    public FishCaughtPopup fishPopup;
 
     public float castDistance = 0.6f;
-    public float minBiteTime = 1f;
-    public float maxBiteTime = 2.5f;
-
-    public GameObject activeBobber;
 
     private PlayerMovement movement;
     private bool isFishing = false;
-
-    // Reference to popup object in the scene
-    public FishCaughtPopup fishPopup;
 
     void Start()
     {
@@ -28,9 +21,7 @@ public class FishingController : MonoBehaviour
     void Update()
     {
         if (!isFishing && Input.GetKeyDown(KeyCode.F))
-        {
             TryToFish();
-        }
     }
 
     void TryToFish()
@@ -43,7 +34,9 @@ public class FishingController : MonoBehaviour
 
         if (IsWaterAt(castPos))
         {
-            StartCoroutine(FishRoutine(castPos));
+            isFishing = true;
+            movement.canMove = false;
+            lineController.StartLinePhase(castPos);
         }
         else
         {
@@ -53,82 +46,44 @@ public class FishingController : MonoBehaviour
 
     bool IsWaterAt(Vector2 worldPos)
     {
-        if (waterTilemap == null)
-        {
-            Debug.LogWarning("No water tilemap assigned!");
-            return false;
-        }
-
+        if (waterTilemap == null) return false;
         Vector3Int cellPos = waterTilemap.WorldToCell(worldPos);
         return waterTilemap.HasTile(cellPos);
     }
 
-    IEnumerator FishRoutine(Vector2 spawnPos)
+    // Called when the line phase ends with no fish hooked
+    public void CatchNothing()
     {
-        isFishing = true;
-        movement.canMove = false;
-
-        // Create bobber object and store reference
-        activeBobber = Instantiate(bobberPrefab, spawnPos, Quaternion.identity);
-
-        float wait = Random.Range(minBiteTime, maxBiteTime);
-        yield return new WaitForSeconds(wait);
-
-        Debug.Log("Fish bite! Starting minigame...");
-
-        bubbleGameManager.StartBubbleGame();
+        isFishing = false;
+        movement.canMove = true;
     }
 
-    // ============================================================
-    // CALLED BY THE MINIGAME 
-    // ============================================================
-
-    public void CatchFishSuccess()
+    // Called by MinigameManager on success
+    public void CatchFishSuccess(List<FishData> caughtFish)
     {
-        Debug.Log("🎣 Fish Caught!");
-
-        // Pick a random fish sprite
-        Sprite caughtFish = null;
-
-        if (FishInventory.Instance != null &&
-            FishInventory.Instance.fishSprites.Length > 0)
+        foreach (FishData fish in caughtFish)
         {
-            int r = Random.Range(0, FishInventory.Instance.fishSprites.Length);
-            caughtFish = FishInventory.Instance.fishSprites[r];
-        }
+            if (FishInventory.Instance != null)
+                FishInventory.Instance.AddFish(fish);
 
-        // Add fish to inventory
-        if (caughtFish != null)
-        {
-            FishInventory.Instance.AddFish(caughtFish);
+            if (RunManager.Instance != null)
+                RunManager.Instance.OnFishCaught(fish);
 
-            // Show popup above player
             if (fishPopup != null)
-                fishPopup.ShowMessage("Caught a " + caughtFish.name + "!");
+                fishPopup.ShowMessage("Caught a " + fish.fishName + "!");
         }
-
-        // 🔹 QUEST PROGRESS
-        if (QuestManager.Instance != null)
-            QuestManager.Instance.FishCaught();
-
-        // Remove bobber
-        if (activeBobber != null)
-            Destroy(activeBobber);
 
         isFishing = false;
         movement.canMove = true;
     }
 
+    // Called by MinigameManager on fail
     public void CatchFishFail()
     {
-        Debug.Log("🐟 Fish Escaped...");
+        Debug.Log("Fish Escaped — line snapped!");
 
-        // 🔹 QUEST FAIL COUNT
-        if (QuestManager.Instance != null)
-            QuestManager.Instance.FishFailed();
-
-        if (activeBobber != null)
-            Destroy(activeBobber);
+        if (RunManager.Instance != null)
+            RunManager.Instance.LineSnapped();
 
         isFishing = false;
         movement.canMove = true;

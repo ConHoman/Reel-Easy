@@ -1,43 +1,75 @@
-using UnityEngine;
-using TMPro;
 using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
-public class BubbleGameManager : MonoBehaviour
+// Replaces BubbleGameManager.
+// Scales bubble count and speed based on the difficulty of hooked fish.
+public class MinigameManager : MonoBehaviour
 {
-    // Reference to the player's FishingController (assign in Inspector)
+    [Header("References")]
     public FishingController fishingController;
-
     public GameObject bubblePrefab;
     public RectTransform panel;
     public TMP_Text countdownText;
+    public TMP_Text hookedInfoText; // optional: shows what fish are hooked
 
-    public int bubblesNeeded = 3;
+    [Header("Base Difficulty")]
+    public int baseBubblesNeeded = 2;
     public int allowedMisses = 3;
+    public float baseBubbleLifetime = 1.2f;
+    public float lifetimeReductionPerDifficulty = 0.08f;
+    public float minBubbleLifetime = 0.5f;
 
-    int popped = 0;
-    int missed = 0;
+    private int bubblesNeeded;
+    private float bubbleLifetime;
+    private int popped;
+    private int missed;
+    private List<FishData> currentFish;
 
-    public void StartBubbleGame()
+    public void StartMinigame(List<FishData> hookedFish)
     {
+        currentFish = hookedFish;
+
+        if (hookedFish.Count == 0)
+        {
+            // No fish hooked â€” line comes back, no penalty
+            fishingController.CatchNothing();
+            return;
+        }
+
+        int totalDifficulty = 0;
+        foreach (FishData f in hookedFish)
+            totalDifficulty += f.difficulty;
+
+        bubblesNeeded = baseBubblesNeeded + totalDifficulty;
+        bubbleLifetime = Mathf.Max(minBubbleLifetime, baseBubbleLifetime - (totalDifficulty * lifetimeReductionPerDifficulty));
+
         StartCoroutine(StartSequence());
     }
 
     IEnumerator StartSequence()
     {
         panel.gameObject.SetActive(true);
+
+        if (hookedInfoText != null)
+        {
+            string names = "";
+            foreach (FishData f in currentFish)
+                names += f.fishName + " ";
+            hookedInfoText.text = "Hooked: " + names.Trim();
+        }
+
         countdownText.enabled = true;
 
         countdownText.text = "3..";
         yield return new WaitForSeconds(1f);
-
         countdownText.text = "2..";
         yield return new WaitForSeconds(1f);
-
         countdownText.text = "1..";
         yield return new WaitForSeconds(1f);
-
-        countdownText.text = "POP!";
+        countdownText.text = "REEL!";
         yield return new WaitForSeconds(0.5f);
 
         countdownText.enabled = false;
@@ -50,7 +82,6 @@ public class BubbleGameManager : MonoBehaviour
 
     IEnumerator BubbleLoop()
     {
-        // Force correct panel pivot/anchors so bubble positions aren't skewed
         panel.pivot = new Vector2(0.5f, 0.5f);
         panel.anchorMin = new Vector2(0.5f, 0.5f);
         panel.anchorMax = new Vector2(0.5f, 0.5f);
@@ -66,16 +97,13 @@ public class BubbleGameManager : MonoBehaviour
             float halfW = rt.rect.width * 0.5f;
             float halfH = rt.rect.height * 0.5f;
 
-            // NEW — spawn centered, not just top-right
             float x = Random.Range(-panelW / 2 + halfW, panelW / 2 - halfW);
             float y = Random.Range(-panelH / 2 + halfH, panelH / 2 - halfH);
-
             rt.anchoredPosition = new Vector2(x, y);
 
             bool poppedThisBubble = false;
-            float life = 1.2f;
+            float life = bubbleLifetime;
 
-            // CLICK POP — remove bubble on click
             Button clicker = bubble.AddComponent<Button>();
             clicker.transition = Selectable.Transition.None;
             clicker.onClick.AddListener(() =>
@@ -85,7 +113,6 @@ public class BubbleGameManager : MonoBehaviour
                 Destroy(bubble);
             });
 
-            // Bubble lifetime
             while (life > 0f && !poppedThisBubble)
             {
                 life -= Time.deltaTime;
@@ -95,21 +122,21 @@ public class BubbleGameManager : MonoBehaviour
             if (!poppedThisBubble)
             {
                 missed++;
-                Destroy(bubble);
+                if (bubble != null) Destroy(bubble);
             }
 
-            yield return new WaitForSeconds(0.15f);
+            yield return new WaitForSeconds(0.1f);
         }
 
-        EndGame();
+        EndMinigame();
     }
 
-    void EndGame()
+    void EndMinigame()
     {
         panel.gameObject.SetActive(false);
 
         if (popped >= bubblesNeeded)
-            fishingController.CatchFishSuccess();
+            fishingController.CatchFishSuccess(currentFish);
         else
             fishingController.CatchFishFail();
     }

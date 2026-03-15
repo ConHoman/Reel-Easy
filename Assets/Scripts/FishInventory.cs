@@ -6,9 +6,6 @@ public class FishInventory : MonoBehaviour
 
     public GameObject inventoryPanel;
     public GameObject slotPrefab;
-    public Sprite defaultFishSprite;
-
-    public Sprite[] fishSprites; // list of available fish
 
     private InventorySlot[] slots;
 
@@ -19,7 +16,6 @@ public class FishInventory : MonoBehaviour
 
     void Start()
     {
-
         int totalSlots = 40;
         slots = new InventorySlot[totalSlots];
 
@@ -35,20 +31,25 @@ public class FishInventory : MonoBehaviour
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.E))
-        {
             inventoryPanel.SetActive(!inventoryPanel.activeSelf);
-        }
     }
 
-    public void AddFish(Sprite fishSprite)
+    public void AddFish(FishData fish)
     {
         foreach (InventorySlot slot in slots)
         {
             if (slot.icon.sprite == null)
             {
-                slot.SetItem(fishSprite);
+                slot.SetItem(fish.fishSprite);
                 return;
             }
         }
+    }
+
+    public void ResetInventory()
+    {
+        if (slots == null) return;
+        foreach (InventorySlot slot in slots)
+            slot.Clear();
     }
 }
