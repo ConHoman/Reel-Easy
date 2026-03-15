@@ -10,8 +10,9 @@ public class FishSpawner : MonoBehaviour
     public GameObject fishPrefab;
     public FishData[] fishPool;
 
-    [Tooltip("How many fish to spawn near the cast point each cast")]
-    public int spawnCount = 8;
+    [Tooltip("Min/max fish to spawn near the cast point each cast")]
+    public int minSpawnCount = 2;
+    public int maxSpawnCount = 6;
     [Tooltip("How far from the cast point fish can spawn (in world units)")]
     public float spawnRadius = 2.5f;
 
@@ -56,7 +57,7 @@ public class FishSpawner : MonoBehaviour
             return;
         }
 
-        int count = Mathf.Min(spawnCount, nearby.Count);
+        int count = Mathf.Min(Random.Range(minSpawnCount, maxSpawnCount + 1), nearby.Count);
         for (int i = 0; i < count; i++)
         {
             int idx = Random.Range(0, nearby.Count);
@@ -72,12 +73,11 @@ public class FishSpawner : MonoBehaviour
                 SpriteRenderer sr = fish.GetComponent<SpriteRenderer>();
                 if (sr != null)
                 {
+                    // Use the fish sprite as a shadow silhouette — dark and semi-transparent
                     if (fw.data.fishSprite != null)
                         sr.sprite = fw.data.fishSprite;
-                    else
-                        sr.color = new Color(0.3f, 0.7f, 1f, 0.8f); // blue dot fallback
-                    fish.transform.localScale = Vector3.one * 0.5f;
-                    // Render above water tilemap
+                    sr.color = new Color(0f, 0.05f, 0.15f, 0.45f);
+                    fish.transform.localScale = Vector3.one * 0.6f;
                     sr.sortingLayerName = "Default";
                     sr.sortingOrder = 5;
                 }
