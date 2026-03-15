@@ -118,15 +118,16 @@ public class SettingsManager : MonoBehaviour
             "Space               Minigames",
             "E                   Fish inventory",
             "Tab                 Fish compendium",
+            "Q                   Active perks",
             "Escape              Settings",
         };
 
-        float rowH = 0.07f;
-        float y = 0.55f;
+        float rowH = 0.062f;
+        float y = 0.57f;
         foreach (string line in controls)
         {
             y -= rowH;
-            MakeLabel(settingsPanel.transform, line, 6f, new Color(0.75f, 0.75f, 0.85f),
+            MakeLabel(settingsPanel.transform, line, 5.5f, new Color(0.75f, 0.75f, 0.85f),
                 TextAlignmentOptions.Left, new Vector2(0.07f, y), new Vector2(0.95f, y + rowH));
         }
 

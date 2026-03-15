@@ -28,10 +28,8 @@ public class PerkPickerUI : MonoBehaviour
     {
         PerkManager.EnsureExists();
 
-        var available = new List<PerkDefinition>();
-        foreach (var def in PerkManager.AllPerks)
-            if (!PerkManager.Instance.HasPerk(def.type))
-                available.Add(def);
+        // All perks are always available — duplicates allowed for stacking.
+        var available = new List<PerkDefinition>(PerkManager.AllPerks);
 
         if (available.Count == 0) return;
 

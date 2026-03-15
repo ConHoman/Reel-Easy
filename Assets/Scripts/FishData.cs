@@ -6,6 +6,6 @@ public class FishData : ScriptableObject
     public string fishName;
     public Sprite fishSprite;
     [Range(1, 5)] public int difficulty = 1;
-    [Range(1, 3)] public int rarity = 1;
+    [Range(1, 4)] public int rarity = 1;
     public int scoreValue = 100;
 }

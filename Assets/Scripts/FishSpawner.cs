@@ -27,6 +27,10 @@ public class FishSpawner : MonoBehaviour
             FishingController fc = FindObjectOfType<FishingController>();
             if (fc != null) waterTilemap = fc.waterTilemap;
         }
+
+        // Always load from FishDatabase so all fish are always in the pool.
+        // Once real sprites exist, apply them to FishData assets directly.
+        fishPool = FishDatabase.CreateAll();
     }
 
     // Called at run start — no fish yet, they spawn per-cast
@@ -65,10 +69,13 @@ public class FishSpawner : MonoBehaviour
         }
 
         // Rarity-weighted pool: common (1) = weight 6, uncommon (2) = weight 2, legendary (3) = weight 1
+        // Mythical (4) only enter the pool on a 1-in-10 cast (making them ~10x rarer than a single legendary)
+        bool allowMythical = Random.value < 0.10f;
         List<FishData> weightedPool = new List<FishData>();
         foreach (FishData fd in fishPool)
         {
-            int weight = fd.rarity == 1 ? 6 : fd.rarity == 2 ? 2 : 1;
+            if (fd.rarity == 4 && !allowMythical) continue;
+            int weight = fd.rarity == 4 ? 1 : fd.rarity == 1 ? 6 : fd.rarity == 2 ? 2 : 1;
             for (int w = 0; w < weight; w++)
                 weightedPool.Add(fd);
         }
@@ -92,6 +99,8 @@ public class FishSpawner : MonoBehaviour
                 {
                     if (fw.data.fishSprite != null)
                         sr.sprite = fw.data.fishSprite;
+                    else if (sr.sprite == null)
+                        sr.sprite = FallbackSprite();
 
                     // Shadow size and tint hints rarity without giving it away
                     switch (fw.data.rarity)
@@ -107,6 +116,10 @@ public class FishSpawner : MonoBehaviour
                         case 3: // legendary — large, purple tint
                             sr.color = new Color(0.15f, 0f, 0.25f, 0.65f);
                             fish.transform.localScale = Vector3.one * 0.8f;
+                            break;
+                        case 4: // mythical — large, hot pink shimmer
+                            sr.color = new Color(0.4f, 0f, 0.3f, 0.85f);
+                            fish.transform.localScale = Vector3.one * 1.0f;
                             break;
                     }
 
@@ -124,5 +137,19 @@ public class FishSpawner : MonoBehaviour
         foreach (GameObject f in spawnedFish)
             if (f != null) Destroy(f);
         spawnedFish.Clear();
+    }
+
+    // Returns a tiny solid-white sprite used as a shadow placeholder when no real sprite exists.
+    static Sprite _fallbackSprite;
+    static Sprite FallbackSprite()
+    {
+        if (_fallbackSprite != null) return _fallbackSprite;
+        var tex = new Texture2D(4, 4);
+        var pixels = new Color[16];
+        for (int i = 0; i < 16; i++) pixels[i] = Color.white;
+        tex.SetPixels(pixels);
+        tex.Apply();
+        _fallbackSprite = Sprite.Create(tex, new Rect(0, 0, 4, 4), Vector2.one * 0.5f, 4f);
+        return _fallbackSprite;
     }
 }

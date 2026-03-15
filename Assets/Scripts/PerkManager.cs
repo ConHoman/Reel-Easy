@@ -8,7 +8,8 @@ public enum PerkType
     SpeedDemon, SilkThread, GamblersHook,
     ChumBucket, RustyLure,
     SteadyHands, IronGrip, TurboReel, QuickFingers,
-    SwiftCurrent, StealthyHook, PatientAngler
+    SwiftCurrent, StealthyHook, PatientAngler,
+    WideGap, SlipStream, CalmWaters
 }
 
 public enum PerkCategory { Safety, Fishing, Scoring, Minigame }
@@ -53,6 +54,9 @@ public class PerkManager : MonoBehaviour
         new PerkDefinition(PerkType.SwiftCurrent,   PerkCategory.Fishing,  "Swift Current",   "Bobber moves 50% faster",               "Steer phase 25% shorter"),
         new PerkDefinition(PerkType.StealthyHook,   PerkCategory.Fishing,  "Stealthy Hook",   "Fish detect bobber 35% later",          "Bobber hitbox 30% smaller"),
         new PerkDefinition(PerkType.PatientAngler,  PerkCategory.Fishing,  "Patient Angler",  "Fish flee 40% slower",                  "Steer phase 20% shorter"),
+        new PerkDefinition(PerkType.WideGap,        PerkCategory.Minigame, "Wide Gap",        "[Ring Dodge] Gap 45% wider",            "[Ring Dodge] Rings shrink 25% faster"),
+        new PerkDefinition(PerkType.SlipStream,     PerkCategory.Minigame, "Slip Stream",     "[Ring Dodge] Rotate 60% faster",        "[Ring Dodge] Gap 20% narrower"),
+        new PerkDefinition(PerkType.CalmWaters,     PerkCategory.Minigame, "Calm Waters",     "[Ring Dodge] Rings 35% slower",         "One extra ring to clear"),
     };
 
     void Awake()
@@ -80,70 +84,61 @@ public class PerkManager : MonoBehaviour
     }
 
     public bool HasPerk(PerkType perk) => active.Contains(perk);
+    public void RemovePerk(PerkType perk) => active.Remove(perk);
     public List<PerkType> ActivePerks => active;
 
-    // ── Stat modifiers queried by other scripts ──────────────
+    // Count stacks of a perk — used so picking the same perk twice actually helps.
+    public int Count(PerkType t) { int n = 0; foreach (var p in active) if (p == t) n++; return n; }
 
-    public float SteerDurationMultiplier
-    {
-        get
-        {
-            float m = 1f;
-            if (HasPerk(PerkType.GlassRod))      m *= 2f;
-            if (HasPerk(PerkType.SpeedDemon))     m *= 0.5f;
-            if (HasPerk(PerkType.SwiftCurrent))   m *= 0.75f;
-            if (HasPerk(PerkType.PatientAngler))  m *= 0.8f;
-            return m;
-        }
-    }
+    // ── Stat modifiers — all stack multiplicatively ───────────
 
-    public float TipSpeedMultiplier
-    {
-        get
-        {
-            float m = 1f;
-            if (HasPerk(PerkType.RustyLure))    m *= 0.5f;
-            if (HasPerk(PerkType.SwiftCurrent)) m *= 1.5f;
-            return m;
-        }
-    }
+    public float SteerDurationMultiplier =>
+        Mathf.Pow(2.00f, Count(PerkType.GlassRod))     *
+        Mathf.Pow(0.50f, Count(PerkType.SpeedDemon))   *
+        Mathf.Pow(0.75f, Count(PerkType.SwiftCurrent)) *
+        Mathf.Pow(0.80f, Count(PerkType.PatientAngler));
 
-    public float HitboxMultiplier
-    {
-        get
-        {
-            float m = 1f;
-            if (HasPerk(PerkType.RustyLure))     m *= 2f;
-            if (HasPerk(PerkType.StealthyHook))  m *= 0.7f;
-            return m;
-        }
-    }
-    public int   SpawnCountBonus       => (HasPerk(PerkType.DenseWaters) ? 2 : 0) + (HasPerk(PerkType.OverfilledReel) ? 2 : 0);
-    public float SpawnRadiusMultiplier => HasPerk(PerkType.ChumBucket) ? 2f : 1f;
-    public int   ExtraBubblesPerFish   => HasPerk(PerkType.OverfilledReel) ? 1 : 0;
-    public int   MinBubbles            => HasPerk(PerkType.ChumBucket) ? 4 : 0;
-    public int   AllowedMissesBonus    => HasPerk(PerkType.SilkThread) ? 2 : 0;
+    public float TipSpeedMultiplier =>
+        Mathf.Pow(0.50f, Count(PerkType.RustyLure))    *
+        Mathf.Pow(1.50f, Count(PerkType.SwiftCurrent));
+
+    public float HitboxMultiplier =>
+        Mathf.Pow(2.00f, Count(PerkType.RustyLure))    *
+        Mathf.Pow(0.70f, Count(PerkType.StealthyHook));
+
+    public int   SpawnCountBonus       => Count(PerkType.DenseWaters) * 2 + Count(PerkType.OverfilledReel) * 2;
+    public float SpawnRadiusMultiplier => Mathf.Pow(2f, Count(PerkType.ChumBucket));
+    public int   ExtraBubblesPerFish   => Count(PerkType.OverfilledReel);
+    public int   MinBubbles            => HasPerk(PerkType.ChumBucket) ? 4 : 0;  // caps at 4
+    public int   AllowedMissesBonus    => Count(PerkType.SilkThread) * 2;
     public int   LinesLostOnSnap       => (HasPerk(PerkType.GlassRod) || HasPerk(PerkType.GamblersHook)) ? 2 : 1;
 
     // Minigame-specific modifiers
-    public float TimingZoneMultiplier    => HasPerk(PerkType.SteadyHands) ? 1.4f : 1f;
-    public float TimingSpeedMultiplier   => HasPerk(PerkType.SteadyHands) ? 1.3f : 1f;
+    public float TimingZoneMultiplier    => Mathf.Pow(1.40f, Count(PerkType.SteadyHands));
+    public float TimingSpeedMultiplier   => Mathf.Pow(1.30f, Count(PerkType.SteadyHands));
     public bool  HoldZoneNoDrain         => HasPerk(PerkType.IronGrip);
-    public float HoldTimeMultiplier      => HasPerk(PerkType.IronGrip) ? 1.5f : 1f;
-    public float TugPlayerMultiplier     => HasPerk(PerkType.TurboReel) ? 2f : 1f;
-    public float TugFishMultiplier       => HasPerk(PerkType.TurboReel) ? 1.5f : 1f;
-    public int   MashClickMultiplier     => HasPerk(PerkType.QuickFingers) ? 2 : 1;
-    public float MashTimeLimitMultiplier   => HasPerk(PerkType.QuickFingers)  ? 0.6f  : 1f;
-    public float FishDetectionMultiplier   => HasPerk(PerkType.StealthyHook)  ? 0.65f : 1f;
-    public float FishFleeSpeedMultiplier   => HasPerk(PerkType.PatientAngler) ? 0.6f  : 1f;
+    public float HoldTimeMultiplier      => Mathf.Pow(1.50f, Count(PerkType.IronGrip));
+    public float TugPlayerMultiplier     => Mathf.Pow(2.00f, Count(PerkType.TurboReel));
+    public float TugFishMultiplier       => Mathf.Pow(1.50f, Count(PerkType.TurboReel));
+    public int   MashClickMultiplier     { get { int m = 1; for (int i = 0; i < Count(PerkType.QuickFingers); i++) m *= 2; return m; } }
+    public float MashTimeLimitMultiplier => Mathf.Pow(0.60f, Count(PerkType.QuickFingers));
+    public float FishDetectionMultiplier => Mathf.Pow(0.65f, Count(PerkType.StealthyHook));
+    public float FishFleeSpeedMultiplier => Mathf.Pow(0.60f, Count(PerkType.PatientAngler));
+
+    // Ring Dodge modifiers
+    public float RingDodgeGapMultiplier      => Mathf.Pow(1.45f, Count(PerkType.WideGap))    * Mathf.Pow(0.80f, Count(PerkType.SlipStream));
+    public float RingDodgeShrinkDurationMult => Mathf.Pow(1.35f, Count(PerkType.CalmWaters)) * Mathf.Pow(0.80f, Count(PerkType.WideGap));
+    public float RingDodgeRotSpeedMultiplier => Mathf.Pow(1.60f, Count(PerkType.SlipStream));
+    public int   RingDodgeExtraRings         => Count(PerkType.CalmWaters);
 
     public int GetScoreForFish(FishData fish)
     {
         if (HasPerk(PerkType.TrophyHunter) && fish.rarity == 1) return 0;
         int score = fish.scoreValue;
-        if (HasPerk(PerkType.TrophyHunter) && fish.rarity == 3) score *= 3;
-        if (HasPerk(PerkType.SpeedDemon))   score *= 2;
-        if (HasPerk(PerkType.GamblersHook)) score *= 3;
+        if (HasPerk(PerkType.TrophyHunter) && fish.rarity == 4) score *= 10; // mythical — massive bonus
+        else if (HasPerk(PerkType.TrophyHunter) && fish.rarity == 3) score *= 3; // TrophyHunter doesn't stack
+        for (int i = 0; i < Count(PerkType.SpeedDemon);   i++) score *= 2;
+        for (int i = 0; i < Count(PerkType.GamblersHook); i++) score *= 3;
         return score;
     }
 

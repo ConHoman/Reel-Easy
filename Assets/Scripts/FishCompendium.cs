@@ -8,8 +8,9 @@ public class FishCompendium : MonoBehaviour
     public static FishCompendium Instance;
 
     private GameObject panel;
-    private Transform listContainer;
-    private TMP_Text titleLabel;
+    private Transform  listContainer;
+    private TMP_Text   titleLabel;
+    private FishData[] cachedFish;   // built once from FishDatabase
 
     void Awake()
     {
@@ -72,10 +73,9 @@ public class FishCompendium : MonoBehaviour
         headersRT.anchorMax = new Vector2(1f, 0.88f);
         headersRT.offsetMin = headersRT.offsetMax = Vector2.zero;
 
-        MakeColumnLabel(headers.transform, "FISH",       0.03f, 0.42f, new Color(0.6f, 0.6f, 0.7f));
-        MakeColumnLabel(headers.transform, "RARITY",     0.42f, 0.62f, new Color(0.6f, 0.6f, 0.7f));
-        MakeColumnLabel(headers.transform, "DIFFICULTY", 0.62f, 0.82f, new Color(0.6f, 0.6f, 0.7f));
-        MakeColumnLabel(headers.transform, "SCORE",      0.82f, 1.00f, new Color(0.6f, 0.6f, 0.7f));
+        MakeColumnLabel(headers.transform, "FISH",       0.03f, 0.48f, new Color(0.6f, 0.6f, 0.7f));
+        MakeColumnLabel(headers.transform, "DIFFICULTY", 0.48f, 0.72f, new Color(0.6f, 0.6f, 0.7f));
+        MakeColumnLabel(headers.transform, "SCORE",      0.72f, 1.00f, new Color(0.6f, 0.6f, 0.7f));
 
         // Scroll area
         var scrollGO = new GameObject("ScrollView");
@@ -138,48 +138,89 @@ public class FishCompendium : MonoBehaviour
         foreach (Transform child in listContainer)
             Destroy(child.gameObject);
 
-        FishData[] allFish = FishSpawner.Instance != null ? FishSpawner.Instance.fishPool : null;
-        if (allFish == null || allFish.Length == 0) return;
+        // Use FishDatabase as the authoritative list so the compendium always shows
+        // every fish regardless of whether FishSpawner is in the scene.
+        if (cachedFish == null)
+            cachedFish = FishDatabase.CreateAll();
+
+        if (cachedFish == null || cachedFish.Length == 0) return;
+
+        // Sort: rarity ascending (common first), then score ascending within group
+        var sorted = new System.Collections.Generic.List<FishData>(cachedFish);
+        sorted.Sort((a, b) => a.rarity != b.rarity ? a.rarity.CompareTo(b.rarity) : a.scoreValue.CompareTo(b.scoreValue));
 
         int discovered = 0;
-        foreach (var fish in allFish)
+        foreach (var fish in sorted)
             if (FishJournal.Instance != null && FishJournal.Instance.IsDiscovered(fish.fishName))
                 discovered++;
 
-        titleLabel.text = "Fish Compendium  " + discovered + " / " + allFish.Length;
+        titleLabel.text = "Fish Compendium  " + discovered + " / " + cachedFish.Length;
 
+        int currentRarity = -1;
         bool alternate = false;
-        foreach (var fish in allFish)
+
+        foreach (var fish in sorted)
         {
+            // Rarity section header
+            if (fish.rarity != currentRarity)
+            {
+                currentRarity = fish.rarity;
+                string[] rarityNames = { "", "Common", "Uncommon", "Legendary", "Mythical" };
+                Color headerBg = currentRarity == 4
+                    ? new Color(0.18f, 0.02f, 0.14f)
+                    : currentRarity == 3
+                        ? new Color(0.18f, 0.10f, 0.04f)
+                        : currentRarity == 2
+                            ? new Color(0.04f, 0.14f, 0.08f)
+                            : new Color(0.08f, 0.09f, 0.16f);
+
+                var hdrRow = new GameObject("Header_" + rarityNames[currentRarity]);
+                hdrRow.transform.SetParent(listContainer, false);
+                hdrRow.AddComponent<Image>().color = headerBg;
+                hdrRow.AddComponent<LayoutElement>().preferredHeight = 13f;
+
+                // Count fish in this rarity group that are discovered
+                int groupTotal = 0, groupFound = 0;
+                foreach (var f in sorted)
+                {
+                    if (f.rarity != currentRarity) continue;
+                    groupTotal++;
+                    if (FishJournal.Instance != null && FishJournal.Instance.IsDiscovered(f.fishName))
+                        groupFound++;
+                }
+
+                string hdrText = rarityNames[currentRarity].ToUpper() + "  " + groupFound + " / " + groupTotal;
+                var hdrLbl = MakeLabel(hdrRow.transform, hdrText, 6f, RarityColor(currentRarity), TextAlignmentOptions.Left);
+                var hRT = hdrLbl.GetComponent<RectTransform>();
+                hRT.anchorMin = new Vector2(0.03f, 0f);
+                hRT.anchorMax = Vector2.one;
+                hRT.offsetMin = hRT.offsetMax = Vector2.zero;
+
+                alternate = false;
+            }
+
             bool known = FishJournal.Instance != null && FishJournal.Instance.IsDiscovered(fish.fishName);
 
             var row = new GameObject("Row_" + fish.fishName);
             row.transform.SetParent(listContainer, false);
-            var rowImg = row.AddComponent<Image>();
-            rowImg.color = alternate
-                ? new Color(0.07f, 0.1f, 0.19f, 1f)
-                : new Color(0.05f, 0.07f, 0.14f, 1f);
-            var le = row.AddComponent<LayoutElement>();
-            le.preferredHeight = 14f;
+            row.AddComponent<Image>().color = alternate
+                ? new Color(0.07f, 0.09f, 0.18f)
+                : new Color(0.05f, 0.07f, 0.13f);
+            row.AddComponent<LayoutElement>().preferredHeight = 13f;
 
             if (known)
             {
-                Color nameColor = RarityColor(fish.rarity);
-                string rarityLabel = fish.rarity == 3 ? "Legendary" : fish.rarity == 2 ? "Uncommon" : "Common";
-                string diffLabel = new string('*', fish.difficulty) + new string('-', 5 - fish.difficulty);
-
-                MakeColumnLabel(row.transform, fish.fishName,         0.03f, 0.42f, nameColor);
-                MakeColumnLabel(row.transform, rarityLabel,           0.42f, 0.62f, nameColor);
-                MakeColumnLabel(row.transform, diffLabel,             0.62f, 0.82f, DifficultyColor(fish.difficulty));
-                MakeColumnLabel(row.transform, fish.scoreValue.ToString(), 0.82f, 1.00f, new Color(1f, 0.85f, 0.3f));
+                string diffStr = new string('*', fish.difficulty) + new string('-', 5 - fish.difficulty);
+                MakeColumnLabel(row.transform, fish.fishName,              0.03f, 0.48f, RarityColor(fish.rarity));
+                MakeColumnLabel(row.transform, diffStr,                    0.48f, 0.72f, DifficultyColor(fish.difficulty));
+                MakeColumnLabel(row.transform, fish.scoreValue.ToString(), 0.72f, 1.00f, new Color(1f, 0.85f, 0.3f));
             }
             else
             {
-                Color dim = new Color(0.35f, 0.35f, 0.4f);
-                MakeColumnLabel(row.transform, "???",  0.03f, 0.42f, dim);
-                MakeColumnLabel(row.transform, "???",  0.42f, 0.62f, dim);
-                MakeColumnLabel(row.transform, "???",  0.62f, 0.82f, dim);
-                MakeColumnLabel(row.transform, "???",  0.82f, 1.00f, dim);
+                Color dim = new Color(0.32f, 0.32f, 0.38f);
+                MakeColumnLabel(row.transform, "???", 0.03f, 0.48f, dim);
+                MakeColumnLabel(row.transform, "???", 0.48f, 0.72f, dim);
+                MakeColumnLabel(row.transform, "???", 0.72f, 1.00f, dim);
             }
 
             alternate = !alternate;
@@ -214,9 +255,10 @@ public class FishCompendium : MonoBehaviour
     {
         switch (rarity)
         {
-            case 3: return new Color(1f,   0.75f, 0.1f);
-            case 2: return new Color(0.4f, 0.8f,  0.4f);
-            default: return new Color(0.85f, 0.85f, 0.85f);
+            case 4: return new Color(1f,   0.2f,  0.8f);  // mythical — hot pink
+            case 3: return new Color(1f,   0.75f, 0.1f);  // legendary — gold
+            case 2: return new Color(0.4f, 0.8f,  0.4f);  // uncommon  — green
+            default: return new Color(0.85f, 0.85f, 0.85f); // common  — grey
         }
     }
 

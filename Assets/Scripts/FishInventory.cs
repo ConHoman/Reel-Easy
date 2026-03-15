@@ -175,7 +175,7 @@ public class FishInventory : MonoBehaviour
             le.preferredHeight = 14f;
 
             Color rarityColor = RarityColor(fish.rarity);
-            string rarityLabel = fish.rarity == 3 ? "Legendary" : fish.rarity == 2 ? "Uncommon" : "Common";
+            string rarityLabel = fish.rarity == 4 ? "Mythical" : fish.rarity == 3 ? "Legendary" : fish.rarity == 2 ? "Uncommon" : "Common";
 
             MakeColumnLabel(row.transform, fish.fishName,          0.03f, 0.45f, rarityColor);
             MakeColumnLabel(row.transform, rarityLabel,            0.45f, 0.65f, rarityColor);
@@ -214,9 +214,10 @@ public class FishInventory : MonoBehaviour
     {
         switch (rarity)
         {
+            case 4: return new Color(1f,   0.2f,  0.8f);  // mythical  — hot pink
             case 3: return new Color(1f,   0.75f, 0.1f);  // legendary — gold
             case 2: return new Color(0.4f, 0.8f,  0.4f);  // uncommon  — green
-            default: return new Color(0.85f, 0.85f, 0.85f); // common   — light grey
+            default: return new Color(0.85f, 0.85f, 0.85f); // common  — light grey
         }
     }
 }

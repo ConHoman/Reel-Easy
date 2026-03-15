@@ -43,7 +43,7 @@ public class RunManager : MonoBehaviour
         GameObject oldPanel = GameObject.Find("GameOverPanel");
         if (oldPanel != null) oldPanel.SetActive(false);
 
-        PerkManager.EnsureExists(); PerkPickerUI.EnsureExists(); SettingsManager.EnsureExists(); FishCompendium.EnsureExists();
+        PerkManager.EnsureExists(); PerkPickerUI.EnsureExists(); SettingsManager.EnsureExists(); FishCompendium.EnsureExists(); DebugMenuManager.EnsureExists(); PerkViewerUI.EnsureExists();
 
         if (runInfoText != null) runInfoText.fontSize = 8f;
     }

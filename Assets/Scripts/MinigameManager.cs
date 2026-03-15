@@ -30,7 +30,7 @@ public class MinigameManager : MonoBehaviour
     private List<FishData> currentFish;
     private GameObject minigameContent;
 
-    private enum MinigameType { BubblePop, TimingBar, ButtonMash, HoldZone, TugOfWar }
+    private enum MinigameType { BubblePop, TimingBar, ButtonMash, HoldZone, TugOfWar, RingDodge }
 
     void Awake()
     {
@@ -164,6 +164,7 @@ public class MinigameManager : MonoBehaviour
             case MinigameType.ButtonMash: StartCoroutine(ButtonMashGame(totalDifficulty)); break;
             case MinigameType.HoldZone:   StartCoroutine(HoldZoneGame(totalDifficulty)); break;
             case MinigameType.TugOfWar:   StartCoroutine(TugOfWarGame(totalDifficulty)); break;
+            case MinigameType.RingDodge:  StartCoroutine(RingDodgeGame(totalDifficulty)); break;
         }
     }
 
@@ -577,4 +578,254 @@ public class MinigameManager : MonoBehaviour
         Destroy(minigameContent); minigameContent = null;
         EndMinigame(pos <= 0.15f);
     }
+
+    // ── Debug / test entry point ───────────────────────────────────────────────
+    // Called by DebugMenuManager to launch a specific minigame with fake fish.
+    public void ForceMinigame(int typeIndex, List<FishData> fish)
+    {
+        currentFish = fish;
+        int totalDifficulty = 0;
+        foreach (var f in fish) totalDifficulty += f.difficulty;
+        bubblesNeeded   = baseBubblesNeeded + totalDifficulty;
+        bubbleLifetime  = Mathf.Max(minBubbleLifetime, baseBubbleLifetime - totalDifficulty * lifetimeReductionPerDifficulty);
+        if (PerkManager.Instance != null)
+        {
+            bubblesNeeded += PerkManager.Instance.ExtraBubblesPerFish * fish.Count;
+            bubblesNeeded  = Mathf.Max(bubblesNeeded, PerkManager.Instance.MinBubbles);
+            currentAllowedMisses = allowedMisses + PerkManager.Instance.AllowedMissesBonus;
+        }
+        else currentAllowedMisses = allowedMisses;
+
+        popped = 0; missed = 0;
+        panel.gameObject.SetActive(true);
+        var bgImg = panel.GetComponent<Image>();
+        if (bgImg != null) bgImg.enabled = true;
+
+        var type = (MinigameType)(typeIndex % System.Enum.GetValues(typeof(MinigameType)).Length);
+        switch (type)
+        {
+            case MinigameType.BubblePop:  StartCoroutine(BubbleLoop()); break;
+            case MinigameType.TimingBar:  StartCoroutine(TimingBarGame(totalDifficulty)); break;
+            case MinigameType.ButtonMash: StartCoroutine(ButtonMashGame(totalDifficulty)); break;
+            case MinigameType.HoldZone:   StartCoroutine(HoldZoneGame(totalDifficulty)); break;
+            case MinigameType.TugOfWar:   StartCoroutine(TugOfWarGame(totalDifficulty)); break;
+            case MinigameType.RingDodge:  StartCoroutine(RingDodgeGame(totalDifficulty)); break;
+        }
+    }
+
+    // ── RING DODGE (modular) ────────────────────────────────────────────────────
+    // To remove: delete `RingDodge` from MinigameType enum, delete the case in StartMinigame,
+    // and delete everything from here to the matching END RING DODGE comment.
+
+    private class ActiveRing
+    {
+        public List<(RectTransform rt, float angleDeg)> segs = new List<(RectTransform, float)>();
+        public float gapCenter;      // degrees – centre of safe gap
+        public float gapHalf;        // half-width of gap in degrees
+        public float radius;         // current radius (shrinks each frame)
+        public float startRadius;
+        public float shrinkDuration;
+        public float elapsed;
+        public bool  hitChecked;
+        public bool  alive = true;
+    }
+
+    IEnumerator RingDodgeGame(int difficulty)
+    {
+        var content = GetFreshContent();
+        yield return null; // let layout settle so panel.rect is valid
+
+        float pw = panel.rect.width;
+        float ph = panel.rect.height;
+
+        // ── Ring container (centred in content) ──────────────────────
+        var ringContGO = new GameObject("RingContainer");
+        ringContGO.transform.SetParent(content, false);
+        var ringContRT = ringContGO.AddComponent<RectTransform>();
+        ringContRT.anchorMin = ringContRT.anchorMax = new Vector2(0.5f, 0.5f);
+        ringContRT.pivot     = new Vector2(0.5f, 0.5f);
+        ringContRT.sizeDelta = Vector2.zero;
+        ringContRT.anchoredPosition = Vector2.zero;
+
+        // ── Difficulty params ─────────────────────────────────────────
+        float gapMult      = PerkManager.Instance != null ? PerkManager.Instance.RingDodgeGapMultiplier      : 1f;
+        float shrinkDMult  = PerkManager.Instance != null ? PerkManager.Instance.RingDodgeShrinkDurationMult  : 1f;
+        float rotMult      = PerkManager.Instance != null ? PerkManager.Instance.RingDodgeRotSpeedMultiplier  : 1f;
+        int   extraRings   = PerkManager.Instance != null ? PerkManager.Instance.RingDodgeExtraRings          : 0;
+
+        float orbitRadius   = 28f;
+        float startRadius   = Mathf.Min(pw, ph) * 0.52f;
+        float shrinkDur     = Mathf.Max(1.6f, 4.8f - difficulty * 0.45f + Random.Range(-0.3f, 0.3f)) * shrinkDMult;
+        float spawnInterval = Mathf.Max(1.0f, 3.2f - difficulty * 0.28f + Random.Range(-0.2f, 0.2f));
+        float gapDeg        = Mathf.Max(26f,  70f  - difficulty * 6f   + Random.Range(-5f,  5f)) * gapMult;
+        int   ringCount     = 4 + difficulty / 2 + extraRings;
+        float rotSpeed      = (80f + difficulty * 8f) * rotMult; // degrees / second
+
+        // ── Orbit guide dots ─────────────────────────────────────────
+        for (int i = 0; i < 36; i++)
+        {
+            float a = i * 10f * Mathf.Deg2Rad;
+            var dotGO = new GameObject("OD");
+            dotGO.transform.SetParent(ringContRT, false);
+            dotGO.AddComponent<Image>().color = new Color(0.4f, 0.65f, 1f, 0.25f);
+            var dotRT = dotGO.GetComponent<RectTransform>();
+            dotRT.anchorMin = dotRT.anchorMax = new Vector2(0.5f, 0.5f);
+            dotRT.pivot      = new Vector2(0.5f, 0.5f);
+            dotRT.sizeDelta  = new Vector2(2f, 2f);
+            dotRT.anchoredPosition = new Vector2(Mathf.Cos(a) * orbitRadius, Mathf.Sin(a) * orbitRadius);
+        }
+
+        // ── Centre marker ─────────────────────────────────────────────
+        var ctrGO = new GameObject("Centre");
+        ctrGO.transform.SetParent(ringContRT, false);
+        ctrGO.AddComponent<Image>().color = new Color(1f, 0.35f, 0.35f, 0.85f);
+        var ctrRT = ctrGO.GetComponent<RectTransform>();
+        ctrRT.anchorMin = ctrRT.anchorMax = new Vector2(0.5f, 0.5f);
+        ctrRT.pivot      = new Vector2(0.5f, 0.5f);
+        ctrRT.sizeDelta  = new Vector2(5f, 5f);
+        ctrRT.anchoredPosition = Vector2.zero;
+
+        // ── Player circle ─────────────────────────────────────────────
+        var playerGO = new GameObject("Player");
+        playerGO.transform.SetParent(ringContRT, false);
+        playerGO.AddComponent<Image>().color = new Color(0.3f, 0.9f, 1f);
+        var playerRT = playerGO.GetComponent<RectTransform>();
+        playerRT.anchorMin = playerRT.anchorMax = new Vector2(0.5f, 0.5f);
+        playerRT.pivot      = new Vector2(0.5f, 0.5f);
+        playerRT.sizeDelta  = new Vector2(8f, 8f);
+
+        // ── Labels ───────────────────────────────────────────────────
+        var titleLabel = MakeLabel(content, "Dodge the rings!  A / D to rotate", 8f, Color.white);
+        var titleRT = titleLabel.GetComponent<RectTransform>();
+        titleRT.anchorMin = new Vector2(0.05f, 0.88f);
+        titleRT.anchorMax = new Vector2(0.95f, 0.99f);
+        titleRT.offsetMin = titleRT.offsetMax = Vector2.zero;
+
+        var statusLabel = MakeLabel(content, "", 8f, Color.white);
+        var statusRT = statusLabel.GetComponent<RectTransform>();
+        statusRT.anchorMin = new Vector2(0.05f, 0.13f);
+        statusRT.anchorMax = new Vector2(0.95f, 0.23f);
+        statusRT.offsetMin = statusRT.offsetMax = Vector2.zero;
+
+        // ── State ────────────────────────────────────────────────────
+        float playerAngle  = 90f;
+        var   rings        = new List<ActiveRing>();
+        float spawnTimer   = spawnInterval; // fire first ring immediately
+        int   ringsSpawned = 0;
+        int   ringsSurvived = 0;
+        bool  failed       = false;
+
+        while (!failed && (ringsSurvived < ringCount || rings.Count > 0))
+        {
+            float dt = Time.deltaTime;
+
+            // Player rotation: D = clockwise (angle decreases), A = counter-clockwise
+            float h = Input.GetAxisRaw("Horizontal");
+            playerAngle -= h * rotSpeed * dt;
+            float pRad = playerAngle * Mathf.Deg2Rad;
+            playerRT.anchoredPosition = new Vector2(Mathf.Cos(pRad) * orbitRadius, Mathf.Sin(pRad) * orbitRadius);
+
+            // Spawn rings
+            spawnTimer += dt;
+            if (spawnTimer >= spawnInterval && ringsSpawned < ringCount)
+            {
+                spawnTimer = 0f;
+                float gap = Random.Range(0f, 360f);
+                var ring = new ActiveRing
+                {
+                    gapCenter     = gap,
+                    gapHalf       = gapDeg * 0.5f,
+                    radius        = startRadius,
+                    startRadius   = startRadius,
+                    shrinkDuration = shrinkDur,
+                    elapsed       = 0f,
+                    hitChecked    = false,
+                    alive         = true,
+                };
+                ring.segs = SpawnRingSegments(ringContRT, gap, gapDeg, startRadius);
+                rings.Add(ring);
+                ringsSpawned++;
+            }
+
+            // Update rings
+            for (int i = rings.Count - 1; i >= 0; i--)
+            {
+                var ring = rings[i];
+                if (!ring.alive) { rings.RemoveAt(i); continue; }
+
+                float prevRadius = ring.radius;
+                ring.elapsed += dt;
+                ring.radius = Mathf.Lerp(ring.startRadius, 0f, ring.elapsed / ring.shrinkDuration);
+
+                // Move segments inward
+                foreach (var (rt, angleDeg) in ring.segs)
+                {
+                    if (rt == null) continue;
+                    float aRad = angleDeg * Mathf.Deg2Rad;
+                    rt.anchoredPosition = new Vector2(Mathf.Cos(aRad) * ring.radius, Mathf.Sin(aRad) * ring.radius);
+                }
+
+                // Hit-check when ring crosses player's orbit radius
+                if (!ring.hitChecked && prevRadius > orbitRadius && ring.radius <= orbitRadius)
+                {
+                    ring.hitChecked = true;
+                    float delta = Mathf.DeltaAngle(ring.gapCenter, playerAngle);
+                    if (Mathf.Abs(delta) <= ring.gapHalf)
+                        ringsSurvived++;
+                    else
+                        failed = true;
+                }
+
+                // Destroy ring once it reaches the centre
+                if (ring.elapsed >= ring.shrinkDuration)
+                {
+                    foreach (var (rt, _) in ring.segs) if (rt != null) Destroy(rt.gameObject);
+                    ring.alive = false;
+                }
+            }
+
+            statusLabel.text = "Rings cleared: " + ringsSurvived + " / " + ringCount;
+            yield return null;
+        }
+
+        // Clean up any leftover segments before destroying content
+        foreach (var ring in rings)
+            foreach (var (rt, _) in ring.segs)
+                if (rt != null) Destroy(rt.gameObject);
+
+        Destroy(minigameContent); minigameContent = null;
+        EndMinigame(!failed);
+    }
+
+    // Spawns arc segments for one ring, leaving a gap around gapCenter (degrees).
+    static List<(RectTransform, float)> SpawnRingSegments(
+        RectTransform parent, float gapCenter, float gapDeg, float radius)
+    {
+        var list    = new List<(RectTransform, float)>();
+        float step  = 8f;
+        float half  = gapDeg * 0.5f;
+
+        for (float a = 0f; a < 360f; a += step)
+        {
+            // Skip segments inside the gap (with a half-step margin so edges are clean)
+            if (Mathf.Abs(Mathf.DeltaAngle(gapCenter, a)) <= half + step * 0.5f) continue;
+
+            var go = new GameObject("Seg");
+            go.transform.SetParent(parent, false);
+            go.AddComponent<Image>().color = new Color(0.95f, 0.28f, 0.18f);
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot      = new Vector2(0.5f, 0.5f);
+            rt.sizeDelta  = new Vector2(10f, 5f);
+
+            float aRad = a * Mathf.Deg2Rad;
+            rt.anchoredPosition  = new Vector2(Mathf.Cos(aRad) * radius, Mathf.Sin(aRad) * radius);
+            rt.localEulerAngles  = new Vector3(0f, 0f, a + 90f); // tangent to ring
+
+            list.Add((rt, a));
+        }
+        return list;
+    }
+
+    // ── END RING DODGE ──────────────────────────────────────────────────────────
 }

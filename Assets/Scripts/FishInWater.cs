@@ -34,6 +34,7 @@ public class FishInWater : MonoBehaviour
         int rarity = data != null ? data.rarity : 1;
         switch (rarity)
         {
+            case 4: detectionRadius = 3.5f; fleeSpeed = 5.0f; break; // mythical — detects from far, bolts instantly
             case 3: detectionRadius = 2.4f; fleeSpeed = 3.2f; break; // legendary
             case 2: detectionRadius = 1.8f; fleeSpeed = 1.8f; break; // uncommon
             default: detectionRadius = 1.1f; fleeSpeed = 0.8f; break; // common
