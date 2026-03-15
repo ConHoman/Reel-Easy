@@ -44,6 +44,8 @@ public class RunManager : MonoBehaviour
         if (oldPanel != null) oldPanel.SetActive(false);
 
         PerkManager.EnsureExists(); PerkPickerUI.EnsureExists(); SettingsManager.EnsureExists();
+
+        if (runInfoText != null) runInfoText.fontSize = 8f;
     }
 
     void Start()

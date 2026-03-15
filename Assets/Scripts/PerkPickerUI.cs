@@ -79,26 +79,26 @@ public class PerkPickerUI : MonoBehaviour
         titleGO.transform.SetParent(pickerPanel.transform, false);
         var title = titleGO.AddComponent<TextMeshProUGUI>();
         title.text = "Choose a Perk";
-        title.fontSize = 20;
+        title.fontSize = 9;
         title.fontStyle = FontStyles.Bold;
         title.alignment = TextAlignmentOptions.Center;
         var titleRT = titleGO.GetComponent<RectTransform>();
-        titleRT.anchorMin = new Vector2(0.2f, 0.72f);
-        titleRT.anchorMax = new Vector2(0.8f, 0.82f);
+        titleRT.anchorMin = new Vector2(0.1f, 0.87f);
+        titleRT.anchorMax = new Vector2(0.9f, 0.97f);
         titleRT.offsetMin = titleRT.offsetMax = Vector2.zero;
 
         // Card row
         var rowGO = new GameObject("CardRow");
         rowGO.transform.SetParent(pickerPanel.transform, false);
         var hLayout = rowGO.AddComponent<HorizontalLayoutGroup>();
-        hLayout.spacing = 20f;
+        hLayout.spacing = 8f;
         hLayout.childAlignment = TextAnchor.MiddleCenter;
         hLayout.childForceExpandWidth  = false;
         hLayout.childForceExpandHeight = false;
         hLayout.childControlHeight = false;
         var rowRT = rowGO.GetComponent<RectTransform>();
-        rowRT.anchorMin = new Vector2(0.05f, 0.3f);
-        rowRT.anchorMax = new Vector2(0.95f, 0.7f);
+        rowRT.anchorMin = new Vector2(0.02f, 0.05f);
+        rowRT.anchorMax = new Vector2(0.98f, 0.84f);
         rowRT.offsetMin = rowRT.offsetMax = Vector2.zero;
         cardRow = rowGO.transform;
     }
@@ -121,21 +121,24 @@ public class PerkPickerUI : MonoBehaviour
         btn.colors = cs;
 
         var cardRT = cardGO.GetComponent<RectTransform>();
-        cardRT.sizeDelta = new Vector2(175f, 0f); // height driven by ContentSizeFitter
+        cardRT.sizeDelta = new Vector2(90f, 0f); // height driven by ContentSizeFitter
 
         // Auto-size height to content
         var csf = cardGO.AddComponent<ContentSizeFitter>();
         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         var layout = cardGO.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(12, 12, 16, 16);
-        layout.spacing = 10f;
+        layout.padding = new RectOffset(5, 5, 8, 8);
+        layout.spacing = 4f;
         layout.childForceExpandWidth  = true;
         layout.childForceExpandHeight = false;
         layout.childAlignment = TextAnchor.UpperCenter;
 
+        // Category badge
+        MakeCardText(cardGO.transform, def.category.ToString().ToUpper(), 5f, CategoryColor(def.category), FontStyles.Bold);
+
         // Name
-        MakeCardText(cardGO.transform, def.displayName, 18f, Color.white, FontStyles.Bold);
+        MakeCardText(cardGO.transform, def.displayName, 8f, Color.white, FontStyles.Bold);
 
         // Divider
         var div = new GameObject("Divider");
@@ -144,11 +147,11 @@ public class PerkPickerUI : MonoBehaviour
         div.AddComponent<LayoutElement>().preferredHeight = 2f;
 
         // Upside (green)
-        MakeCardText(cardGO.transform, "+ " + def.upside, 13f, new Color(0.4f, 1f, 0.5f), FontStyles.Normal);
+        MakeCardText(cardGO.transform, "+ " + def.upside, 6f, new Color(0.4f, 1f, 0.5f), FontStyles.Normal);
 
         // Downside (red) — only if there is one
         if (!string.IsNullOrEmpty(def.downside))
-            MakeCardText(cardGO.transform, "- " + def.downside, 13f, new Color(1f, 0.42f, 0.42f), FontStyles.Normal);
+            MakeCardText(cardGO.transform, "- " + def.downside, 6f, new Color(1f, 0.42f, 0.42f), FontStyles.Normal);
 
         btn.onClick.AddListener(() => PickPerk(captured.type));
     }
@@ -165,6 +168,18 @@ public class PerkPickerUI : MonoBehaviour
         t.alignment = TextAlignmentOptions.Center;
         t.enableWordWrapping = true;
         go.AddComponent<LayoutElement>().flexibleWidth = 1f;
+    }
+
+    static Color CategoryColor(PerkCategory cat)
+    {
+        switch (cat)
+        {
+            case PerkCategory.Safety:   return new Color(0.4f, 0.7f, 1f);    // blue
+            case PerkCategory.Fishing:  return new Color(0.3f, 0.9f, 0.8f);  // teal
+            case PerkCategory.Scoring:  return new Color(1f,   0.85f, 0.2f); // gold
+            case PerkCategory.Minigame: return new Color(0.8f, 0.5f, 1f);    // purple
+            default:                    return Color.white;
+        }
     }
 
     void PickPerk(PerkType perk)

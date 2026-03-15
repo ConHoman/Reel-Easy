@@ -6,19 +6,23 @@ public enum PerkType
     ExtraLine, DenseWaters, LuckyLine,
     OverfilledReel, GlassRod, TrophyHunter,
     SpeedDemon, SilkThread, GamblersHook,
-    ChumBucket, RustyLure
+    ChumBucket, RustyLure,
+    SteadyHands, IronGrip, TurboReel, QuickFingers
 }
+
+public enum PerkCategory { Safety, Fishing, Scoring, Minigame }
 
 [System.Serializable]
 public class PerkDefinition
 {
     public PerkType type;
+    public PerkCategory category;
     public string displayName;
     public string upside;
     public string downside;
 
-    public PerkDefinition(PerkType t, string name, string up, string down)
-    { type = t; displayName = name; upside = up; downside = down; }
+    public PerkDefinition(PerkType t, PerkCategory cat, string name, string up, string down)
+    { type = t; category = cat; displayName = name; upside = up; downside = down; }
 }
 
 public class PerkManager : MonoBehaviour
@@ -30,17 +34,21 @@ public class PerkManager : MonoBehaviour
 
     public static readonly PerkDefinition[] AllPerks =
     {
-        new PerkDefinition(PerkType.ExtraLine,      "+1 Line",         "+1 line immediately",               ""),
-        new PerkDefinition(PerkType.DenseWaters,    "Dense Waters",    "+2 max fish per cast",              ""),
-        new PerkDefinition(PerkType.LuckyLine,      "Lucky Line",      "One snap per run is free",          "Single use"),
-        new PerkDefinition(PerkType.OverfilledReel, "Overfilled Reel", "+2 max fish per cast",              "+1 bubble per fish hooked"),
-        new PerkDefinition(PerkType.GlassRod,       "Glass Rod",       "Steer phase lasts 2x longer",       "Snap costs 2 lines"),
-        new PerkDefinition(PerkType.TrophyHunter,   "Trophy Hunter",   "Legendary fish score 3x",           "Common fish score 0"),
-        new PerkDefinition(PerkType.SpeedDemon,     "Speed Demon",     "All fish score 2x",                 "Steer phase is half as long"),
-        new PerkDefinition(PerkType.SilkThread,     "Silk Thread",     "+2 allowed misses in minigame",     "Start with 1 fewer line"),
-        new PerkDefinition(PerkType.GamblersHook,   "Gambler's Hook",  "All catches score 3x",              "Every snap costs 2 lines"),
-        new PerkDefinition(PerkType.ChumBucket,     "Chum Bucket",     "Spawn radius doubled",              "Minimum 4 bubbles always"),
-        new PerkDefinition(PerkType.RustyLure,      "Rusty Lure",      "Bobber hitbox 2x larger",           "Steer speed halved"),
+        new PerkDefinition(PerkType.ExtraLine,      PerkCategory.Safety,   "+1 Line",         "+1 line immediately",               ""),
+        new PerkDefinition(PerkType.LuckyLine,      PerkCategory.Safety,   "Lucky Line",      "One snap per run is free",          "Single use"),
+        new PerkDefinition(PerkType.DenseWaters,    PerkCategory.Fishing,  "Dense Waters",    "+2 max fish per cast",              ""),
+        new PerkDefinition(PerkType.OverfilledReel, PerkCategory.Fishing,  "Overfilled Reel", "+2 max fish per cast",              "+1 bubble per fish hooked"),
+        new PerkDefinition(PerkType.GlassRod,       PerkCategory.Fishing,  "Glass Rod",       "Steer phase lasts 2x longer",       "Snap costs 2 lines"),
+        new PerkDefinition(PerkType.ChumBucket,     PerkCategory.Fishing,  "Chum Bucket",     "Spawn radius doubled",              "Min 4 bubbles always"),
+        new PerkDefinition(PerkType.RustyLure,      PerkCategory.Fishing,  "Rusty Lure",      "Bobber hitbox 2x larger",           "Steer speed halved"),
+        new PerkDefinition(PerkType.TrophyHunter,   PerkCategory.Scoring,  "Trophy Hunter",   "Legendary fish score 3x",           "Common fish score 0"),
+        new PerkDefinition(PerkType.SpeedDemon,     PerkCategory.Scoring,  "Speed Demon",     "All fish score 2x",                 "Steer phase is half as long"),
+        new PerkDefinition(PerkType.GamblersHook,   PerkCategory.Scoring,  "Gambler's Hook",  "All catches score 3x",              "Every snap costs 2 lines"),
+        new PerkDefinition(PerkType.SilkThread,     PerkCategory.Minigame, "Silk Thread",     "[Bubble Pop] +2 allowed misses",        "Start with 1 fewer line"),
+        new PerkDefinition(PerkType.SteadyHands,    PerkCategory.Minigame, "Steady Hands",    "[Timing Bar] Zone 40% wider",           "[Timing Bar] Cursor 30% faster"),
+        new PerkDefinition(PerkType.IronGrip,       PerkCategory.Minigame, "Iron Grip",       "[Hold Zone] Progress never drains",     "[Hold Zone] Need 50% more hold time"),
+        new PerkDefinition(PerkType.TurboReel,      PerkCategory.Minigame, "Turbo Reel",      "[Tug of War] Your pull is 2x stronger", "[Tug of War] Fish pulls 1.5x harder"),
+        new PerkDefinition(PerkType.QuickFingers,   PerkCategory.Minigame, "Quick Fingers",   "[Button Mash] Each press counts double","[Button Mash] 40% less time"),
     };
 
     void Awake()
@@ -91,6 +99,16 @@ public class PerkManager : MonoBehaviour
     public int   MinBubbles            => HasPerk(PerkType.ChumBucket) ? 4 : 0;
     public int   AllowedMissesBonus    => HasPerk(PerkType.SilkThread) ? 2 : 0;
     public int   LinesLostOnSnap       => (HasPerk(PerkType.GlassRod) || HasPerk(PerkType.GamblersHook)) ? 2 : 1;
+
+    // Minigame-specific modifiers
+    public float TimingZoneMultiplier    => HasPerk(PerkType.SteadyHands) ? 1.4f : 1f;
+    public float TimingSpeedMultiplier   => HasPerk(PerkType.SteadyHands) ? 1.3f : 1f;
+    public bool  HoldZoneNoDrain         => HasPerk(PerkType.IronGrip);
+    public float HoldTimeMultiplier      => HasPerk(PerkType.IronGrip) ? 1.5f : 1f;
+    public float TugPlayerMultiplier     => HasPerk(PerkType.TurboReel) ? 2f : 1f;
+    public float TugFishMultiplier       => HasPerk(PerkType.TurboReel) ? 1.5f : 1f;
+    public int   MashClickMultiplier     => HasPerk(PerkType.QuickFingers) ? 2 : 1;
+    public float MashTimeLimitMultiplier => HasPerk(PerkType.QuickFingers) ? 0.6f : 1f;
 
     public int GetScoreForFish(FishData fish)
     {

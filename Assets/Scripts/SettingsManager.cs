@@ -39,8 +39,8 @@ public class SettingsManager : MonoBehaviour
         settingsPanel.AddComponent<Image>().color = new Color(0.05f, 0.05f, 0.1f, 0.95f);
         var panelRT = settingsPanel.GetComponent<RectTransform>();
         panelRT.anchorMin = panelRT.anchorMax = panelRT.pivot = new Vector2(1f, 1f);
-        panelRT.anchoredPosition = new Vector2(-4f, -22f);
-        panelRT.sizeDelta = new Vector2(148f, 36f);
+        panelRT.anchoredPosition = new Vector2(-4f, -16f);
+        panelRT.sizeDelta = new Vector2(110f, 22f);
 
         // Hints toggle button inside panel
         var toggleGO = new GameObject("HintsToggle");
@@ -48,7 +48,7 @@ public class SettingsManager : MonoBehaviour
         var toggleBtn = toggleGO.AddComponent<Button>();
         toggleBtn.transition = Selectable.Transition.None;
         hintsToggleLabel = toggleGO.AddComponent<TextMeshProUGUI>();
-        hintsToggleLabel.fontSize = 9f;
+        hintsToggleLabel.fontSize = 7f;
         hintsToggleLabel.alignment = TextAlignmentOptions.Left;
         hintsToggleLabel.color = Color.white;
         var toggleRT = toggleGO.GetComponent<RectTransform>();
@@ -70,13 +70,13 @@ public class SettingsManager : MonoBehaviour
         var gearRT = gearGO.GetComponent<RectTransform>();
         gearRT.anchorMin = gearRT.anchorMax = gearRT.pivot = new Vector2(1f, 1f);
         gearRT.anchoredPosition = new Vector2(-4f, -4f);
-        gearRT.sizeDelta = new Vector2(18f, 18f);
+        gearRT.sizeDelta = new Vector2(12f, 12f);
 
         var gearLabelGO = new GameObject("Label");
         gearLabelGO.transform.SetParent(gearGO.transform, false);
         var gearLabel = gearLabelGO.AddComponent<TextMeshProUGUI>();
         gearLabel.text = "=";   // simple settings icon substitute
-        gearLabel.fontSize = 9f;
+        gearLabel.fontSize = 7f;
         gearLabel.alignment = TextAlignmentOptions.Center;
         gearLabel.color = Color.white;
         var gearLabelRT = gearLabelGO.GetComponent<RectTransform>();
