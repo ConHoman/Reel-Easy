@@ -69,12 +69,14 @@ public class FishSpawner : MonoBehaviour
             {
                 fw.data = fishPool[Random.Range(0, fishPool.Length)];
 
-                // Show the fish sprite at a small scale so it's visible in the water
                 SpriteRenderer sr = fish.GetComponent<SpriteRenderer>();
-                if (sr != null && fw.data.fishSprite != null)
+                if (sr != null)
                 {
-                    sr.sprite = fw.data.fishSprite;
-                    fish.transform.localScale = Vector3.one * 0.3f;
+                    if (fw.data.fishSprite != null)
+                        sr.sprite = fw.data.fishSprite;
+                    else
+                        sr.color = new Color(0.3f, 0.7f, 1f, 0.8f); // blue dot fallback
+                    fish.transform.localScale = Vector3.one * 0.5f;
                 }
             }
 

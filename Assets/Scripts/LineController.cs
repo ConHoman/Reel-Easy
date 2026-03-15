@@ -19,6 +19,7 @@ public class LineController : MonoBehaviour
     [Header("Phase Settings")]
     public float tipSpeed = 4f;
     public float phaseDuration = 3f;
+    public float maxLineLength = 2.5f;
 
     // Static reference so FishInWater can find the active line
     public static LineController ActiveInstance;
@@ -64,7 +65,10 @@ public class LineController : MonoBehaviour
         // Use the bobber as the moving tip if provided, otherwise fall back to lineTipPrefab
         GameObject tipPrefab = (bobberOverride != null) ? bobberOverride : lineTipPrefab;
         lineTip = Instantiate(tipPrefab, startPos, Quaternion.identity);
-        lineTip.transform.localScale = Vector3.one * 0.5f;
+        lineTip.transform.localScale = Vector3.one * 0.2f;
+
+        // Tag must be set so FishInWater can detect it
+        lineTip.tag = "LineTip";
 
         // Rigidbody2D required for OnTriggerEnter2D to fire
         Rigidbody2D tipRb = lineTip.GetComponent<Rigidbody2D>();
@@ -72,9 +76,11 @@ public class LineController : MonoBehaviour
         tipRb.isKinematic = true;
         tipRb.gravityScale = 0f;
 
-        // Enlarge collider so hooking fish is easier
+        // Always ensure a trigger collider exists
         CircleCollider2D tipCol = lineTip.GetComponent<CircleCollider2D>();
-        if (tipCol != null) tipCol.radius = 0.4f;
+        if (tipCol == null) tipCol = lineTip.AddComponent<CircleCollider2D>();
+        tipCol.isTrigger = true;
+        tipCol.radius = 0.35f;
 
         lineRenderer.enabled = true;
 
@@ -89,7 +95,14 @@ public class LineController : MonoBehaviour
             float my = Input.GetAxisRaw("Vertical");
             Vector2 dir = new Vector2(mx, my).normalized;
 
-            lineTip.transform.position += (Vector3)(dir * tipSpeed * Time.deltaTime);
+            Vector3 newPos = lineTip.transform.position + (Vector3)(dir * tipSpeed * Time.deltaTime);
+
+            // Clamp to maxLineLength from cast point so bobber can't go too far
+            Vector2 offset = (Vector2)newPos - startPos;
+            if (offset.magnitude > maxLineLength)
+                newPos = (Vector2)startPos + offset.normalized * maxLineLength;
+
+            lineTip.transform.position = newPos;
 
             lineRenderer.SetPosition(0, transform.position);
             lineRenderer.SetPosition(1, lineTip.transform.position);

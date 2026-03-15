@@ -33,6 +33,9 @@ public class MinigameManager : MonoBehaviour
     public void BeginSteerPhase(float duration)
     {
         panel.gameObject.SetActive(true);
+        // Hide background during steer phase so it's just floating text
+        var bg = panel.GetComponent<UnityEngine.UI.Image>();
+        if (bg != null) bg.enabled = false;
         if (hookedInfoText != null) hookedInfoText.text = "Move the bobber with WASD!";
         StartCoroutine(SteerCountdown(duration));
     }
@@ -87,6 +90,9 @@ public class MinigameManager : MonoBehaviour
         }
 
         panel.gameObject.SetActive(true);
+        // Restore background for the actual minigame
+        var bg = panel.GetComponent<UnityEngine.UI.Image>();
+        if (bg != null) bg.enabled = true;
         popped = 0;
         missed = 0;
         StartCoroutine(BubbleLoop());
