@@ -39,6 +39,16 @@ public class LineController : MonoBehaviour
 
     public void StartLinePhase(Vector2 castPos)
     {
+        if (lineTipPrefab == null)
+        {
+            Debug.LogError("LineController: lineTipPrefab is not assigned! Run Reel Easy > 3. Setup Scene.");
+            return;
+        }
+        if (minigameManager == null)
+        {
+            Debug.LogError("LineController: minigameManager is not assigned! Run Reel Easy > 3. Setup Scene.");
+            return;
+        }
         hookedFish.Clear();
         StartCoroutine(LinePhaseRoutine(castPos));
     }

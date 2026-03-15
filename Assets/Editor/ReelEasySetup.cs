@@ -287,6 +287,9 @@ public static class ReelEasySetup
             fc.lineController = lc;
             minigame.fishingController = fc;
 
+            if (fc.bobberPrefab == null)
+                fc.bobberPrefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Sprites/Bobber.prefab");
+
             FishInventory inv = Object.FindObjectOfType<FishInventory>();
             runManager.fishInventory = inv;
             runManager.fishSpawner   = fishSpawner;

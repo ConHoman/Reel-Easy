@@ -7,11 +7,13 @@ public class FishingController : MonoBehaviour
     public Tilemap waterTilemap;
     public LineController lineController;
     public FishCaughtPopup fishPopup;
+    public GameObject bobberPrefab; // visual only during snake phase
 
     public float castDistance = 0.6f;
 
     private PlayerMovement movement;
     private bool isFishing = false;
+    private GameObject activeBobber;
 
     void Start()
     {
@@ -32,16 +34,25 @@ public class FishingController : MonoBehaviour
 
         Vector2 castPos = (Vector2)transform.position + lookDir * castDistance;
 
-        if (IsWaterAt(castPos))
-        {
-            isFishing = true;
-            movement.canMove = false;
-            lineController.StartLinePhase(castPos);
-        }
-        else
+        if (!IsWaterAt(castPos))
         {
             Debug.Log("You must face water to fish.");
+            return;
         }
+
+        if (lineController == null)
+        {
+            Debug.LogError("FishingController: LineController is not assigned! Run Reel Easy > 3. Setup Scene.");
+            return;
+        }
+
+        isFishing = true;
+        movement.canMove = false;
+
+        if (bobberPrefab != null)
+            activeBobber = Instantiate(bobberPrefab, castPos, Quaternion.identity);
+
+        lineController.StartLinePhase(castPos);
     }
 
     bool IsWaterAt(Vector2 worldPos)
@@ -51,9 +62,19 @@ public class FishingController : MonoBehaviour
         return waterTilemap.HasTile(cellPos);
     }
 
+    void DestroyBobber()
+    {
+        if (activeBobber != null)
+        {
+            Destroy(activeBobber);
+            activeBobber = null;
+        }
+    }
+
     // Called when the line phase ends with no fish hooked
     public void CatchNothing()
     {
+        DestroyBobber();
         isFishing = false;
         movement.canMove = true;
     }
@@ -61,6 +82,8 @@ public class FishingController : MonoBehaviour
     // Called by MinigameManager on success
     public void CatchFishSuccess(List<FishData> caughtFish)
     {
+        DestroyBobber();
+
         foreach (FishData fish in caughtFish)
         {
             if (FishInventory.Instance != null)
@@ -80,6 +103,7 @@ public class FishingController : MonoBehaviour
     // Called by MinigameManager on fail
     public void CatchFishFail()
     {
+        DestroyBobber();
         Debug.Log("Fish Escaped — line snapped!");
 
         if (RunManager.Instance != null)
