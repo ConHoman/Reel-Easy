@@ -84,7 +84,11 @@ public class MinigameManager : MonoBehaviour
             else
             {
                 var names = new System.Collections.Generic.List<string>();
-                foreach (FishData f in hookedFish) names.Add(f.fishName);
+                foreach (FishData f in hookedFish)
+                {
+                    bool known = FishJournal.Instance != null && FishJournal.Instance.IsDiscovered(f.fishName);
+                    names.Add(known ? f.fishName : "???");
+                }
                 hookedInfoText.text = "Hooked: " + string.Join(", ", names);
             }
         }

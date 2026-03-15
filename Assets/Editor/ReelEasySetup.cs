@@ -150,6 +150,7 @@ public static class ReelEasySetup
         RunManager runManager = FindOrCreate<RunManager>("RunManager");
         FishSpawner fishSpawner = FindOrCreate<FishSpawner>("FishSpawner");
         MinigameManager minigame = FindOrCreate<MinigameManager>("MinigameManager");
+        FindOrCreate<FishJournal>("FishJournal");
 
         // ── FishSpawner wiring ─────────────────────────────────
         if (fishSpawner.fishPrefab == null)

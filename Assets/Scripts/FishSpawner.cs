@@ -57,6 +57,15 @@ public class FishSpawner : MonoBehaviour
             return;
         }
 
+        // Rarity-weighted pool: common (1) = weight 6, uncommon (2) = weight 2, legendary (3) = weight 1
+        List<FishData> weightedPool = new List<FishData>();
+        foreach (FishData fd in fishPool)
+        {
+            int weight = fd.rarity == 1 ? 6 : fd.rarity == 2 ? 2 : 1;
+            for (int w = 0; w < weight; w++)
+                weightedPool.Add(fd);
+        }
+
         int count = Mathf.Min(Random.Range(minSpawnCount, maxSpawnCount + 1), nearby.Count);
         for (int i = 0; i < count; i++)
         {
@@ -68,16 +77,31 @@ public class FishSpawner : MonoBehaviour
             FishInWater fw = fish.GetComponent<FishInWater>();
             if (fw != null)
             {
-                fw.data = fishPool[Random.Range(0, fishPool.Length)];
+                fw.data = weightedPool[Random.Range(0, weightedPool.Count)];
 
                 SpriteRenderer sr = fish.GetComponent<SpriteRenderer>();
                 if (sr != null)
                 {
-                    // Use the fish sprite as a shadow silhouette — dark and semi-transparent
                     if (fw.data.fishSprite != null)
                         sr.sprite = fw.data.fishSprite;
-                    sr.color = new Color(0f, 0.05f, 0.15f, 0.45f);
-                    fish.transform.localScale = Vector3.one * 0.6f;
+
+                    // Shadow size and tint hints rarity without giving it away
+                    switch (fw.data.rarity)
+                    {
+                        case 1: // common — small dark shadow
+                            sr.color = new Color(0f, 0.05f, 0.15f, 0.4f);
+                            fish.transform.localScale = Vector3.one * 0.45f;
+                            break;
+                        case 2: // uncommon — medium, blue tint
+                            sr.color = new Color(0f, 0.1f, 0.3f, 0.55f);
+                            fish.transform.localScale = Vector3.one * 0.6f;
+                            break;
+                        case 3: // legendary — large, purple tint
+                            sr.color = new Color(0.15f, 0f, 0.25f, 0.65f);
+                            fish.transform.localScale = Vector3.one * 0.8f;
+                            break;
+                    }
+
                     sr.sortingLayerName = "Default";
                     sr.sortingOrder = 5;
                 }

@@ -76,6 +76,9 @@ public class FishingController : MonoBehaviour
 
         foreach (FishData fish in caughtFish)
         {
+            if (FishJournal.Instance != null)
+                FishJournal.Instance.Discover(fish.fishName);
+
             if (FishInventory.Instance != null)
                 FishInventory.Instance.AddFish(fish);
 
