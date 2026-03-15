@@ -165,6 +165,18 @@ public static class ReelEasySetup
                 pool.Add(AssetDatabase.LoadAssetAtPath<FishData>(AssetDatabase.GUIDToAssetPath(g)));
             fishSpawner.fishPool = pool.ToArray();
         }
+        if (fishSpawner.waterTilemap == null)
+        {
+            // Grab the water tilemap reference from FishingController
+            FishingController fcForTilemap = Object.FindObjectOfType<FishingController>();
+            if (fcForTilemap != null && fcForTilemap.waterTilemap != null)
+            {
+                fishSpawner.waterTilemap = fcForTilemap.waterTilemap;
+                Debug.Log("[Reel Easy] Assigned water tilemap to FishSpawner from FishingController.");
+            }
+            else
+                Debug.LogWarning("[Reel Easy] Could not find water tilemap — assign FishSpawner.waterTilemap manually in the Inspector.");
+        }
 
         // ── Minigame wiring ────────────────────────────────────
         if (minigame.bubblePrefab == null)
