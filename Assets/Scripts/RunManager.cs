@@ -27,6 +27,13 @@ public class RunManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+
+        // Hide our panel immediately so it's never visible before StartRun()
+        if (runOverPanel != null) runOverPanel.SetActive(false);
+
+        // Hide any leftover game over panel from the old QuestManager
+        GameObject oldPanel = GameObject.Find("GameOverPanel");
+        if (oldPanel != null) oldPanel.SetActive(false);
     }
 
     void Start()

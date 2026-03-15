@@ -292,6 +292,39 @@ public static class ReelEasySetup
     }
 
     // ─────────────────────────────────────────────────────────
+    // CLEANUP — disable old QuestManager UI leftovers
+    // ─────────────────────────────────────────────────────────
+    [MenuItem("Reel Easy/Fix - Hide Old Quest UI")]
+    static void HideOldQuestUI()
+    {
+        int fixed_ = 0;
+
+        // Old game over panel (QuestManager left it active in the scene)
+        GameObject oldPanel = GameObject.Find("GameOverPanel");
+        if (oldPanel != null)
+        {
+            oldPanel.SetActive(false);
+            Debug.Log("[Reel Easy] Disabled old GameOverPanel");
+            fixed_++;
+        }
+
+        // Old quest text (the "Quest: Catch Fish" label)
+        GameObject oldQuestText = GameObject.Find("QuestText");
+        if (oldQuestText != null)
+        {
+            oldQuestText.SetActive(false);
+            Debug.Log("[Reel Easy] Disabled old QuestText");
+            fixed_++;
+        }
+
+        if (fixed_ == 0)
+            Debug.Log("[Reel Easy] No old quest UI found — nothing to clean up.");
+
+        EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
+        EditorSceneManager.SaveOpenScenes();
+    }
+
+    // ─────────────────────────────────────────────────────────
     // RUN ALL
     // ─────────────────────────────────────────────────────────
     [MenuItem("Reel Easy/Run Full Setup")]
@@ -300,6 +333,7 @@ public static class ReelEasySetup
         CreateFishDataAssets();
         CreatePrefabs();
         SetupScene();
+        HideOldQuestUI();
         Debug.Log("[Reel Easy] Full setup complete!");
     }
 
