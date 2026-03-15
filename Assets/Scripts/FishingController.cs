@@ -52,6 +52,10 @@ public class FishingController : MonoBehaviour
         if (bobberPrefab != null)
             activeBobber = Instantiate(bobberPrefab, castPos, Quaternion.identity);
 
+        // Spawn fish near the cast point so they're always reachable
+        if (FishSpawner.Instance != null)
+            FishSpawner.Instance.SpawnFishNear(castPos);
+
         lineController.StartLinePhase(castPos);
     }
 
