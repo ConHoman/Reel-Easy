@@ -66,7 +66,17 @@ public class FishSpawner : MonoBehaviour
             GameObject fish = Instantiate(fishPrefab, spawnPos, Quaternion.identity);
             FishInWater fw = fish.GetComponent<FishInWater>();
             if (fw != null)
+            {
                 fw.data = fishPool[Random.Range(0, fishPool.Length)];
+
+                // Show the fish sprite at a small scale so it's visible in the water
+                SpriteRenderer sr = fish.GetComponent<SpriteRenderer>();
+                if (sr != null && fw.data.fishSprite != null)
+                {
+                    sr.sprite = fw.data.fishSprite;
+                    fish.transform.localScale = Vector3.one * 0.3f;
+                }
+            }
 
             spawnedFish.Add(fish);
         }

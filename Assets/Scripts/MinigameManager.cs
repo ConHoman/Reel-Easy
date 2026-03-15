@@ -33,7 +33,7 @@ public class MinigameManager : MonoBehaviour
     public void BeginSteerPhase(float duration)
     {
         panel.gameObject.SetActive(true);
-        if (hookedInfoText != null) hookedInfoText.text = "Steer with WASD to hook fish!";
+        if (hookedInfoText != null) hookedInfoText.text = "Move the bobber with WASD!";
         StartCoroutine(SteerCountdown(duration));
     }
 
@@ -77,14 +77,12 @@ public class MinigameManager : MonoBehaviour
         if (hookedInfoText != null)
         {
             if (hookedFish.Count == 0)
-            {
                 hookedInfoText.text = "Nothing hooked!";
-            }
             else
             {
-                string names = "";
-                foreach (FishData f in hookedFish) names += f.fishName + " ";
-                hookedInfoText.text = "Hooked: " + names.Trim();
+                var names = new System.Collections.Generic.List<string>();
+                foreach (FishData f in hookedFish) names.Add(f.fishName);
+                hookedInfoText.text = "Hooked: " + string.Join(", ", names);
             }
         }
 

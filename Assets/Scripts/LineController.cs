@@ -41,7 +41,7 @@ public class LineController : MonoBehaviour
         lineRenderer.enabled = false;
     }
 
-    public void StartLinePhase(Vector2 castPos)
+    public void StartLinePhase(Vector2 castPos, GameObject bobberOverride = null)
     {
         if (lineTipPrefab == null)
         {
@@ -54,16 +54,16 @@ public class LineController : MonoBehaviour
             return;
         }
         hookedFish.Clear();
-        StartCoroutine(LinePhaseRoutine(castPos));
+        StartCoroutine(LinePhaseRoutine(castPos, bobberOverride));
     }
 
-    IEnumerator LinePhaseRoutine(Vector2 startPos)
+    IEnumerator LinePhaseRoutine(Vector2 startPos, GameObject bobberOverride = null)
     {
         phaseActive = true;
 
-        lineTip = Instantiate(lineTipPrefab, startPos, Quaternion.identity);
-
-        // Scale up the tip so it's visible and easier to hook fish with
+        // Use the bobber as the moving tip if provided, otherwise fall back to lineTipPrefab
+        GameObject tipPrefab = (bobberOverride != null) ? bobberOverride : lineTipPrefab;
+        lineTip = Instantiate(tipPrefab, startPos, Quaternion.identity);
         lineTip.transform.localScale = Vector3.one * 0.5f;
 
         // Rigidbody2D required for OnTriggerEnter2D to fire

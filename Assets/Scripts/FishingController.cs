@@ -7,13 +7,12 @@ public class FishingController : MonoBehaviour
     public Tilemap waterTilemap;
     public LineController lineController;
     public FishCaughtPopup fishPopup;
-    public GameObject bobberPrefab; // visual only during snake phase
+    public GameObject bobberPrefab; // used as the moving line tip visual
 
     public float castDistance = 0.6f;
 
     private PlayerMovement movement;
     private bool isFishing = false;
-    private GameObject activeBobber;
 
     void Start()
     {
@@ -49,14 +48,11 @@ public class FishingController : MonoBehaviour
         isFishing = true;
         movement.canMove = false;
 
-        if (bobberPrefab != null)
-            activeBobber = Instantiate(bobberPrefab, castPos, Quaternion.identity);
-
         // Spawn fish near the cast point so they're always reachable
         if (FishSpawner.Instance != null)
             FishSpawner.Instance.SpawnFishNear(castPos);
 
-        lineController.StartLinePhase(castPos);
+        lineController.StartLinePhase(castPos, bobberPrefab);
     }
 
     bool IsWaterAt(Vector2 worldPos)
@@ -66,19 +62,9 @@ public class FishingController : MonoBehaviour
         return waterTilemap.HasTile(cellPos);
     }
 
-    void DestroyBobber()
-    {
-        if (activeBobber != null)
-        {
-            Destroy(activeBobber);
-            activeBobber = null;
-        }
-    }
-
     // Called when the line phase ends with no fish hooked
     public void CatchNothing()
     {
-        DestroyBobber();
         isFishing = false;
         movement.canMove = true;
     }
@@ -87,7 +73,6 @@ public class FishingController : MonoBehaviour
     public void CatchFishSuccess(List<FishData> caughtFish)
     {
         Debug.Log($"[Fishing] CatchFishSuccess called. Fish: {caughtFish.Count}, Time.timeScale={Time.timeScale}");
-        DestroyBobber();
 
         foreach (FishData fish in caughtFish)
         {
@@ -108,7 +93,6 @@ public class FishingController : MonoBehaviour
     // Called by MinigameManager on fail
     public void CatchFishFail()
     {
-        DestroyBobber();
         Debug.Log($"[Fishing] CatchFishFail called. Time.timeScale={Time.timeScale}");
 
         if (RunManager.Instance != null)
