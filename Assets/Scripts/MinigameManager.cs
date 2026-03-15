@@ -50,7 +50,13 @@ public class MinigameManager : MonoBehaviour
             if (bg != null) bg.enabled = false;
         }
         if (countdownText != null) countdownText.enabled = false;
-        if (hookedInfoText != null) hookedInfoText.text = "Move the bobber with WASD!";
+        if (hookedInfoText != null)
+        {
+            if (SettingsManager.ShowHints)
+                hookedInfoText.text = "Move the bobber with WASD!";
+            else
+                hookedInfoText.text = "";
+        }
 
         // Auto-create hintText if not set
         if (hintText == null)
@@ -126,6 +132,7 @@ public class MinigameManager : MonoBehaviour
         // Update hooked info text then go straight to bubbles — no second countdown
         if (hookedInfoText != null)
         {
+            hookedInfoText.fontSize = 9f;
             if (hookedFish.Count == 0)
                 hookedInfoText.text = "Nothing hooked!";
             else

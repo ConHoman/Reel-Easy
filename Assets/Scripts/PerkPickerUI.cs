@@ -91,10 +91,11 @@ public class PerkPickerUI : MonoBehaviour
         var rowGO = new GameObject("CardRow");
         rowGO.transform.SetParent(pickerPanel.transform, false);
         var hLayout = rowGO.AddComponent<HorizontalLayoutGroup>();
-        hLayout.spacing = 16f;
+        hLayout.spacing = 20f;
         hLayout.childAlignment = TextAnchor.MiddleCenter;
-        hLayout.childForceExpandWidth = false;
+        hLayout.childForceExpandWidth  = false;
         hLayout.childForceExpandHeight = false;
+        hLayout.childControlHeight = false;
         var rowRT = rowGO.GetComponent<RectTransform>();
         rowRT.anchorMin = new Vector2(0.05f, 0.3f);
         rowRT.anchorMax = new Vector2(0.95f, 0.7f);
@@ -120,30 +121,34 @@ public class PerkPickerUI : MonoBehaviour
         btn.colors = cs;
 
         var cardRT = cardGO.GetComponent<RectTransform>();
-        cardRT.sizeDelta = new Vector2(175f, 200f);
+        cardRT.sizeDelta = new Vector2(175f, 0f); // height driven by ContentSizeFitter
+
+        // Auto-size height to content
+        var csf = cardGO.AddComponent<ContentSizeFitter>();
+        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         var layout = cardGO.AddComponent<VerticalLayoutGroup>();
-        layout.padding = new RectOffset(10, 10, 14, 14);
-        layout.spacing = 8f;
+        layout.padding = new RectOffset(12, 12, 16, 16);
+        layout.spacing = 10f;
         layout.childForceExpandWidth  = true;
         layout.childForceExpandHeight = false;
         layout.childAlignment = TextAnchor.UpperCenter;
 
         // Name
-        MakeCardText(cardGO.transform, def.displayName, 14f, Color.white, FontStyles.Bold);
+        MakeCardText(cardGO.transform, def.displayName, 18f, Color.white, FontStyles.Bold);
 
         // Divider
         var div = new GameObject("Divider");
         div.transform.SetParent(cardGO.transform, false);
         div.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.12f);
-        div.AddComponent<LayoutElement>().preferredHeight = 1f;
+        div.AddComponent<LayoutElement>().preferredHeight = 2f;
 
         // Upside (green)
-        MakeCardText(cardGO.transform, "+ " + def.upside, 10f, new Color(0.4f, 1f, 0.5f), FontStyles.Normal);
+        MakeCardText(cardGO.transform, "+ " + def.upside, 13f, new Color(0.4f, 1f, 0.5f), FontStyles.Normal);
 
         // Downside (red) — only if there is one
         if (!string.IsNullOrEmpty(def.downside))
-            MakeCardText(cardGO.transform, "- " + def.downside, 10f, new Color(1f, 0.42f, 0.42f), FontStyles.Normal);
+            MakeCardText(cardGO.transform, "- " + def.downside, 13f, new Color(1f, 0.42f, 0.42f), FontStyles.Normal);
 
         btn.onClick.AddListener(() => PickPerk(captured.type));
     }
