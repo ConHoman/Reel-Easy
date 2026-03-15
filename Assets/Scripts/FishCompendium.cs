@@ -1,15 +1,11 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public class FishInventory : MonoBehaviour
+// Press Tab to open/close. Shows all fish with stats; undiscovered appear as ???.
+public class FishCompendium : MonoBehaviour
 {
-    public static FishInventory Instance;
-
-    // Tracks count of each fish type caught this run
-    private readonly Dictionary<string, (FishData data, int count)> caught =
-        new Dictionary<string, (FishData, int)>();
+    public static FishCompendium Instance;
 
     private GameObject panel;
     private Transform listContainer;
@@ -22,26 +18,20 @@ public class FishInventory : MonoBehaviour
         BuildUI();
     }
 
+    public static void EnsureExists()
+    {
+        if (Instance == null)
+            new GameObject("FishCompendium").AddComponent<FishCompendium>();
+    }
+
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E) && panel != null)
-            panel.SetActive(!panel.activeSelf);
-    }
-
-    public void AddFish(FishData fish)
-    {
-        if (fish == null) return;
-        if (caught.ContainsKey(fish.fishName))
-            caught[fish.fishName] = (fish, caught[fish.fishName].count + 1);
-        else
-            caught[fish.fishName] = (fish, 1);
-        RefreshList();
-    }
-
-    public void ResetInventory()
-    {
-        caught.Clear();
-        RefreshList();
+        if (Input.GetKeyDown(KeyCode.Tab) && panel != null)
+        {
+            bool opening = !panel.activeSelf;
+            panel.SetActive(opening);
+            if (opening) RefreshList();
+        }
     }
 
     // ── UI Construction ────────────────────────────────────────────────────────
@@ -50,10 +40,9 @@ public class FishInventory : MonoBehaviour
     {
         Canvas canvas = UICanvas.Get();
 
-        // Backdrop
-        panel = new GameObject("FishInventory");
+        panel = new GameObject("FishCompendium");
         panel.transform.SetParent(canvas.transform, false);
-        panel.AddComponent<Image>().color = new Color(0.05f, 0.07f, 0.12f, 0.96f);
+        panel.AddComponent<Image>().color = new Color(0.04f, 0.07f, 0.14f, 0.97f);
         var panelRT = panel.GetComponent<RectTransform>();
         panelRT.anchorMin = new Vector2(0.1f, 0.08f);
         panelRT.anchorMax = new Vector2(0.9f, 0.92f);
@@ -62,31 +51,31 @@ public class FishInventory : MonoBehaviour
         // Title bar
         var titleBar = new GameObject("TitleBar");
         titleBar.transform.SetParent(panel.transform, false);
-        titleBar.AddComponent<Image>().color = new Color(0.08f, 0.11f, 0.2f, 1f);
+        titleBar.AddComponent<Image>().color = new Color(0.07f, 0.1f, 0.22f, 1f);
         var titleBarRT = titleBar.GetComponent<RectTransform>();
         titleBarRT.anchorMin = new Vector2(0f, 0.88f);
         titleBarRT.anchorMax = Vector2.one;
         titleBarRT.offsetMin = titleBarRT.offsetMax = Vector2.zero;
 
-        titleLabel = MakeLabel(titleBar.transform, "Fish Caught — 0", 9f, Color.white, TextAlignmentOptions.Center);
-        var titleLabelRT = titleLabel.GetComponent<RectTransform>();
-        titleLabelRT.anchorMin = Vector2.zero;
-        titleLabelRT.anchorMax = Vector2.one;
-        titleLabelRT.offsetMin = titleLabelRT.offsetMax = Vector2.zero;
+        titleLabel = MakeLabel(titleBar.transform, "Fish Compendium", 9f, Color.white, TextAlignmentOptions.Center);
+        var tlRT = titleLabel.GetComponent<RectTransform>();
+        tlRT.anchorMin = Vector2.zero;
+        tlRT.anchorMax = Vector2.one;
+        tlRT.offsetMin = tlRT.offsetMax = Vector2.zero;
 
         // Column headers
         var headers = new GameObject("Headers");
         headers.transform.SetParent(panel.transform, false);
-        headers.AddComponent<Image>().color = new Color(0.1f, 0.14f, 0.24f, 1f);
+        headers.AddComponent<Image>().color = new Color(0.09f, 0.13f, 0.26f, 1f);
         var headersRT = headers.GetComponent<RectTransform>();
         headersRT.anchorMin = new Vector2(0f, 0.79f);
         headersRT.anchorMax = new Vector2(1f, 0.88f);
         headersRT.offsetMin = headersRT.offsetMax = Vector2.zero;
 
-        MakeColumnLabel(headers.transform, "FISH",    0.03f, 0.45f, new Color(0.6f, 0.6f, 0.7f));
-        MakeColumnLabel(headers.transform, "RARITY",  0.45f, 0.65f, new Color(0.6f, 0.6f, 0.7f));
-        MakeColumnLabel(headers.transform, "COUNT",   0.65f, 0.80f, new Color(0.6f, 0.6f, 0.7f));
-        MakeColumnLabel(headers.transform, "SCORE",   0.80f, 1.00f, new Color(0.6f, 0.6f, 0.7f));
+        MakeColumnLabel(headers.transform, "FISH",       0.03f, 0.42f, new Color(0.6f, 0.6f, 0.7f));
+        MakeColumnLabel(headers.transform, "RARITY",     0.42f, 0.62f, new Color(0.6f, 0.6f, 0.7f));
+        MakeColumnLabel(headers.transform, "DIFFICULTY", 0.62f, 0.82f, new Color(0.6f, 0.6f, 0.7f));
+        MakeColumnLabel(headers.transform, "SCORE",      0.82f, 1.00f, new Color(0.6f, 0.6f, 0.7f));
 
         // Scroll area
         var scrollGO = new GameObject("ScrollView");
@@ -101,7 +90,6 @@ public class FishInventory : MonoBehaviour
         scrollRect.vertical = true;
         scrollRect.scrollSensitivity = 10f;
 
-        // Mask
         var maskGO = new GameObject("Mask");
         maskGO.transform.SetParent(scrollGO.transform, false);
         var maskRT = maskGO.AddComponent<RectTransform>();
@@ -112,7 +100,6 @@ public class FishInventory : MonoBehaviour
         var mask = maskGO.AddComponent<Mask>();
         mask.showMaskGraphic = false;
 
-        // Content container
         var contentGO = new GameObject("Content");
         contentGO.transform.SetParent(maskGO.transform, false);
         var contentRT = contentGO.AddComponent<RectTransform>();
@@ -134,8 +121,8 @@ public class FishInventory : MonoBehaviour
         scrollRect.content = contentRT;
         listContainer = contentGO.transform;
 
-        // Hint label at bottom
-        var hint = MakeLabel(panel.transform, "Press E to close", 6f, new Color(0.4f, 0.4f, 0.5f), TextAlignmentOptions.Center);
+        // Hint
+        var hint = MakeLabel(panel.transform, "Tab to close", 6f, new Color(0.4f, 0.4f, 0.5f), TextAlignmentOptions.Center);
         var hintRT = hint.GetComponent<RectTransform>();
         hintRT.anchorMin = new Vector2(0.1f, 0f);
         hintRT.anchorMax = new Vector2(0.9f, 0.05f);
@@ -151,36 +138,49 @@ public class FishInventory : MonoBehaviour
         foreach (Transform child in listContainer)
             Destroy(child.gameObject);
 
-        int totalFish = 0;
-        foreach (var entry in caught)
-            totalFish += entry.Value.count;
+        FishData[] allFish = FishSpawner.Instance != null ? FishSpawner.Instance.fishPool : null;
+        if (allFish == null || allFish.Length == 0) return;
 
-        if (titleLabel != null)
-            titleLabel.text = "Fish Caught — " + totalFish;
+        int discovered = 0;
+        foreach (var fish in allFish)
+            if (FishJournal.Instance != null && FishJournal.Instance.IsDiscovered(fish.fishName))
+                discovered++;
+
+        titleLabel.text = "Fish Compendium  " + discovered + " / " + allFish.Length;
 
         bool alternate = false;
-        foreach (var entry in caught)
+        foreach (var fish in allFish)
         {
-            FishData fish = entry.Value.data;
-            int count = entry.Value.count;
-            int totalScore = fish.scoreValue * count;
+            bool known = FishJournal.Instance != null && FishJournal.Instance.IsDiscovered(fish.fishName);
 
             var row = new GameObject("Row_" + fish.fishName);
             row.transform.SetParent(listContainer, false);
             var rowImg = row.AddComponent<Image>();
             rowImg.color = alternate
-                ? new Color(0.08f, 0.1f, 0.18f, 1f)
-                : new Color(0.06f, 0.08f, 0.14f, 1f);
+                ? new Color(0.07f, 0.1f, 0.19f, 1f)
+                : new Color(0.05f, 0.07f, 0.14f, 1f);
             var le = row.AddComponent<LayoutElement>();
             le.preferredHeight = 14f;
 
-            Color rarityColor = RarityColor(fish.rarity);
-            string rarityLabel = fish.rarity == 3 ? "Legendary" : fish.rarity == 2 ? "Uncommon" : "Common";
+            if (known)
+            {
+                Color nameColor = RarityColor(fish.rarity);
+                string rarityLabel = fish.rarity == 3 ? "Legendary" : fish.rarity == 2 ? "Uncommon" : "Common";
+                string diffLabel = new string('*', fish.difficulty) + new string('-', 5 - fish.difficulty);
 
-            MakeColumnLabel(row.transform, fish.fishName,          0.03f, 0.45f, rarityColor);
-            MakeColumnLabel(row.transform, rarityLabel,            0.45f, 0.65f, rarityColor);
-            MakeColumnLabel(row.transform, "x" + count,           0.65f, 0.80f, Color.white);
-            MakeColumnLabel(row.transform, totalScore.ToString(),  0.80f, 1.00f, new Color(1f, 0.85f, 0.3f));
+                MakeColumnLabel(row.transform, fish.fishName,         0.03f, 0.42f, nameColor);
+                MakeColumnLabel(row.transform, rarityLabel,           0.42f, 0.62f, nameColor);
+                MakeColumnLabel(row.transform, diffLabel,             0.62f, 0.82f, DifficultyColor(fish.difficulty));
+                MakeColumnLabel(row.transform, fish.scoreValue.ToString(), 0.82f, 1.00f, new Color(1f, 0.85f, 0.3f));
+            }
+            else
+            {
+                Color dim = new Color(0.35f, 0.35f, 0.4f);
+                MakeColumnLabel(row.transform, "???",  0.03f, 0.42f, dim);
+                MakeColumnLabel(row.transform, "???",  0.42f, 0.62f, dim);
+                MakeColumnLabel(row.transform, "???",  0.62f, 0.82f, dim);
+                MakeColumnLabel(row.transform, "???",  0.82f, 1.00f, dim);
+            }
 
             alternate = !alternate;
         }
@@ -214,9 +214,16 @@ public class FishInventory : MonoBehaviour
     {
         switch (rarity)
         {
-            case 3: return new Color(1f,   0.75f, 0.1f);  // legendary — gold
-            case 2: return new Color(0.4f, 0.8f,  0.4f);  // uncommon  — green
-            default: return new Color(0.85f, 0.85f, 0.85f); // common   — light grey
+            case 3: return new Color(1f,   0.75f, 0.1f);
+            case 2: return new Color(0.4f, 0.8f,  0.4f);
+            default: return new Color(0.85f, 0.85f, 0.85f);
         }
+    }
+
+    static Color DifficultyColor(int difficulty)
+    {
+        if (difficulty <= 2) return new Color(0.4f, 0.9f, 0.4f);
+        if (difficulty == 3) return new Color(1f,   0.8f, 0.2f);
+        return new Color(1f, 0.35f, 0.35f);
     }
 }

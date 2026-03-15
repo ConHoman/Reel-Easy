@@ -25,6 +25,12 @@ public class LineController : MonoBehaviour
     // Static reference so FishInWater can find the active line
     public static LineController ActiveInstance;
 
+    // Current tip position — null when no cast is active
+    public static Vector2? TipPosition =>
+        (ActiveInstance != null && ActiveInstance.lineTip != null)
+        ? (Vector2?)ActiveInstance.lineTip.transform.position
+        : null;
+
     private GameObject lineTip;
     private LineRenderer lineRenderer;
     private List<FishData> hookedFish = new List<FishData>();

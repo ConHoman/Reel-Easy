@@ -102,6 +102,14 @@ public class MinigameManager : MonoBehaviour
     {
         currentFish = hookedFish;
 
+        if (hookedFish.Count == 0)
+        {
+            // Nothing hooked — skip minigame entirely, count as a successful cast
+            if (fishingController != null)
+                fishingController.CatchFishSuccess(hookedFish);
+            return;
+        }
+
         int totalDifficulty = 0;
         if (hookedFish.Count == 0)
         {

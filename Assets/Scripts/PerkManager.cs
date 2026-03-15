@@ -7,7 +7,8 @@ public enum PerkType
     OverfilledReel, GlassRod, TrophyHunter,
     SpeedDemon, SilkThread, GamblersHook,
     ChumBucket, RustyLure,
-    SteadyHands, IronGrip, TurboReel, QuickFingers
+    SteadyHands, IronGrip, TurboReel, QuickFingers,
+    SwiftCurrent, StealthyHook, PatientAngler
 }
 
 public enum PerkCategory { Safety, Fishing, Scoring, Minigame }
@@ -49,6 +50,9 @@ public class PerkManager : MonoBehaviour
         new PerkDefinition(PerkType.IronGrip,       PerkCategory.Minigame, "Iron Grip",       "[Hold Zone] Progress never drains",     "[Hold Zone] Need 50% more hold time"),
         new PerkDefinition(PerkType.TurboReel,      PerkCategory.Minigame, "Turbo Reel",      "[Tug of War] Your pull is 2x stronger", "[Tug of War] Fish pulls 1.5x harder"),
         new PerkDefinition(PerkType.QuickFingers,   PerkCategory.Minigame, "Quick Fingers",   "[Button Mash] Each press counts double","[Button Mash] 40% less time"),
+        new PerkDefinition(PerkType.SwiftCurrent,   PerkCategory.Fishing,  "Swift Current",   "Bobber moves 50% faster",               "Steer phase 25% shorter"),
+        new PerkDefinition(PerkType.StealthyHook,   PerkCategory.Fishing,  "Stealthy Hook",   "Fish detect bobber 35% later",          "Bobber hitbox 30% smaller"),
+        new PerkDefinition(PerkType.PatientAngler,  PerkCategory.Fishing,  "Patient Angler",  "Fish flee 40% slower",                  "Steer phase 20% shorter"),
     };
 
     void Awake()
@@ -85,14 +89,35 @@ public class PerkManager : MonoBehaviour
         get
         {
             float m = 1f;
-            if (HasPerk(PerkType.GlassRod))  m *= 2f;
-            if (HasPerk(PerkType.SpeedDemon)) m *= 0.5f;
+            if (HasPerk(PerkType.GlassRod))      m *= 2f;
+            if (HasPerk(PerkType.SpeedDemon))     m *= 0.5f;
+            if (HasPerk(PerkType.SwiftCurrent))   m *= 0.75f;
+            if (HasPerk(PerkType.PatientAngler))  m *= 0.8f;
             return m;
         }
     }
 
-    public float TipSpeedMultiplier    => HasPerk(PerkType.RustyLure) ? 0.5f : 1f;
-    public float HitboxMultiplier      => HasPerk(PerkType.RustyLure) ? 2f : 1f;
+    public float TipSpeedMultiplier
+    {
+        get
+        {
+            float m = 1f;
+            if (HasPerk(PerkType.RustyLure))    m *= 0.5f;
+            if (HasPerk(PerkType.SwiftCurrent)) m *= 1.5f;
+            return m;
+        }
+    }
+
+    public float HitboxMultiplier
+    {
+        get
+        {
+            float m = 1f;
+            if (HasPerk(PerkType.RustyLure))     m *= 2f;
+            if (HasPerk(PerkType.StealthyHook))  m *= 0.7f;
+            return m;
+        }
+    }
     public int   SpawnCountBonus       => (HasPerk(PerkType.DenseWaters) ? 2 : 0) + (HasPerk(PerkType.OverfilledReel) ? 2 : 0);
     public float SpawnRadiusMultiplier => HasPerk(PerkType.ChumBucket) ? 2f : 1f;
     public int   ExtraBubblesPerFish   => HasPerk(PerkType.OverfilledReel) ? 1 : 0;
@@ -108,7 +133,9 @@ public class PerkManager : MonoBehaviour
     public float TugPlayerMultiplier     => HasPerk(PerkType.TurboReel) ? 2f : 1f;
     public float TugFishMultiplier       => HasPerk(PerkType.TurboReel) ? 1.5f : 1f;
     public int   MashClickMultiplier     => HasPerk(PerkType.QuickFingers) ? 2 : 1;
-    public float MashTimeLimitMultiplier => HasPerk(PerkType.QuickFingers) ? 0.6f : 1f;
+    public float MashTimeLimitMultiplier   => HasPerk(PerkType.QuickFingers)  ? 0.6f  : 1f;
+    public float FishDetectionMultiplier   => HasPerk(PerkType.StealthyHook)  ? 0.65f : 1f;
+    public float FishFleeSpeedMultiplier   => HasPerk(PerkType.PatientAngler) ? 0.6f  : 1f;
 
     public int GetScoreForFish(FishData fish)
     {
