@@ -7,11 +7,8 @@ public class TitleScreen : MonoBehaviour
 
     void Update()
     {
-        Debug.Log("Title Screen Running");  // <-- Add this
-
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            Debug.Log("Space pressed - loading scene"); // <-- Add this
             SceneManager.LoadScene(sceneToLoad);
         }
     }

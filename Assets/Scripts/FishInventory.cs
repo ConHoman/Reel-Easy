@@ -12,9 +12,13 @@ public class FishInventory : MonoBehaviour
 
     private InventorySlot[] slots;
 
-    void Start()
+    void Awake()
     {
         Instance = this;
+    }
+
+    void Start()
+    {
 
         int totalSlots = 40;
         slots = new InventorySlot[totalSlots];

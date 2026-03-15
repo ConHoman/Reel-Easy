@@ -99,17 +99,17 @@ public class FishingController : MonoBehaviour
 
         // Add fish to inventory
         if (caughtFish != null)
+        {
             FishInventory.Instance.AddFish(caughtFish);
+
+            // Show popup above player
+            if (fishPopup != null)
+                fishPopup.ShowMessage("Caught a " + caughtFish.name + "!");
+        }
 
         // 🔹 QUEST PROGRESS
         if (QuestManager.Instance != null)
             QuestManager.Instance.FishCaught();
-
-        // Show popup above player
-        if (fishPopup != null)
-        {
-            fishPopup.ShowMessage("Caught a " + caughtFish.name + "!");
-        }
 
         // Remove bobber
         if (activeBobber != null)
