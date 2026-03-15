@@ -36,9 +36,10 @@ public class FishInventory : MonoBehaviour
 
     public void AddFish(FishData fish)
     {
+        if (slots == null) return;
         foreach (InventorySlot slot in slots)
         {
-            if (slot.icon.sprite == null)
+            if (slot.icon.color.a == 0f)
             {
                 slot.SetItem(fish.fishSprite);
                 return;
