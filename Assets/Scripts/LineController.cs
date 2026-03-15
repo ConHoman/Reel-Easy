@@ -20,6 +20,9 @@ public class LineController : MonoBehaviour
     public float tipSpeed = 4f;
     public float phaseDuration = 3f;
 
+    // Static reference so FishInWater can find the active line
+    public static LineController ActiveInstance;
+
     private GameObject lineTip;
     private LineRenderer lineRenderer;
     private List<FishData> hookedFish = new List<FishData>();
@@ -27,6 +30,7 @@ public class LineController : MonoBehaviour
 
     void Awake()
     {
+        ActiveInstance = this;
         lineRenderer = GetComponent<LineRenderer>();
         if (lineRenderer == null)
             lineRenderer = gameObject.AddComponent<LineRenderer>();

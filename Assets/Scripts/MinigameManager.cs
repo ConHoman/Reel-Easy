@@ -34,8 +34,10 @@ public class MinigameManager : MonoBehaviour
 
         if (hookedFish.Count == 0)
         {
-            // No fish hooked — line comes back, no penalty
-            fishingController.CatchNothing();
+            // Nothing hooked — start a basic minigame anyway so casting always does something
+            bubblesNeeded = baseBubblesNeeded;
+            bubbleLifetime = baseBubbleLifetime;
+            StartCoroutine(StartSequence());
             return;
         }
 
@@ -136,7 +138,7 @@ public class MinigameManager : MonoBehaviour
         panel.gameObject.SetActive(false);
 
         if (popped >= bubblesNeeded)
-            fishingController.CatchFishSuccess(currentFish);
+            fishingController.CatchFishSuccess(currentFish ?? new System.Collections.Generic.List<FishData>());
         else
             fishingController.CatchFishFail();
     }

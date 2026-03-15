@@ -28,10 +28,7 @@ public class FishInWater : MonoBehaviour
     {
         if (!other.CompareTag("LineTip")) return;
 
-        LineController lc = other.GetComponentInParent<LineController>();
-        if (lc == null) lc = other.GetComponent<LineController>();
-
-        if (lc != null)
-            lc.HookFish(this);
+        if (LineController.ActiveInstance != null)
+            LineController.ActiveInstance.HookFish(this);
     }
 }
