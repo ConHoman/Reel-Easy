@@ -193,11 +193,19 @@ public static class ReelEasySetup
         // ── RunManager UI ──────────────────────────────────────
         if (runManager.runInfoText == null)
         {
-            TMP_Text info = CreateTMPText(canvas.transform, "RunInfoText",
-                anchor: new Vector2(0, 1), pivot: new Vector2(0, 1),
-                pos: new Vector2(10, -10), size: new Vector2(180, 120));
-            info.text = "Lines: 5\nScore: 0\nFish: 0";
-            info.fontSize = 14;
+            // Dark pill background
+            GameObject hudBG = CreatePanel(canvas.transform, "HUDBacking",
+                new Color(0, 0, 0, 0.55f), new Vector2(0, 1), new Vector2(0, 1));
+            RectTransform bgRT = hudBG.GetComponent<RectTransform>();
+            bgRT.anchorMin = bgRT.anchorMax = bgRT.pivot = new Vector2(0, 1);
+            bgRT.anchoredPosition = new Vector2(4, -4);
+            bgRT.sizeDelta = new Vector2(210, 20);
+
+            TMP_Text info = CreateTMPText(hudBG.transform, "RunInfoText",
+                anchor: new Vector2(0, 0.5f), pivot: new Vector2(0, 0.5f),
+                pos: new Vector2(5, 0), size: new Vector2(200, 20));
+            info.text = "Lines 5  |  Score 0  |  Fish 0";
+            info.fontSize = 9;
             runManager.runInfoText = info;
         }
 

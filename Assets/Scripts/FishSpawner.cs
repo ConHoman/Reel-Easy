@@ -77,6 +77,9 @@ public class FishSpawner : MonoBehaviour
                     else
                         sr.color = new Color(0.3f, 0.7f, 1f, 0.8f); // blue dot fallback
                     fish.transform.localScale = Vector3.one * 0.5f;
+                    // Render above water tilemap
+                    sr.sortingLayerName = "Default";
+                    sr.sortingOrder = 5;
                 }
             }
 

@@ -96,9 +96,6 @@ public class RunManager : MonoBehaviour
     void UpdateUI()
     {
         if (runInfoText != null)
-            runInfoText.text =
-                "Lines: " + linesRemaining + "\n" +
-                "Score: " + runScore + "\n" +
-                "Fish: " + fishCaught;
+            runInfoText.text = "Lines " + linesRemaining + "  |  Score " + runScore + "  |  Fish " + fishCaught;
     }
 }

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 // After casting, the player steers the line tip with WASD for a few seconds.
 // Any FishInWater with a trigger collider the tip enters gets hooked.
@@ -42,7 +43,7 @@ public class LineController : MonoBehaviour
         lineRenderer.enabled = false;
     }
 
-    public void StartLinePhase(Vector2 castPos, GameObject bobberOverride = null)
+    public void StartLinePhase(Vector2 castPos, GameObject bobberOverride = null, Tilemap waterTilemap = null)
     {
         if (lineTipPrefab == null)
         {
@@ -55,10 +56,10 @@ public class LineController : MonoBehaviour
             return;
         }
         hookedFish.Clear();
-        StartCoroutine(LinePhaseRoutine(castPos, bobberOverride));
+        StartCoroutine(LinePhaseRoutine(castPos, bobberOverride, waterTilemap));
     }
 
-    IEnumerator LinePhaseRoutine(Vector2 startPos, GameObject bobberOverride = null)
+    IEnumerator LinePhaseRoutine(Vector2 startPos, GameObject bobberOverride = null, Tilemap waterTilemap = null)
     {
         phaseActive = true;
 
@@ -97,12 +98,18 @@ public class LineController : MonoBehaviour
 
             Vector3 newPos = lineTip.transform.position + (Vector3)(dir * tipSpeed * Time.deltaTime);
 
-            // Clamp to maxLineLength from cast point so bobber can't go too far
+            // Clamp to maxLineLength from cast point
             Vector2 offset = (Vector2)newPos - startPos;
             if (offset.magnitude > maxLineLength)
                 newPos = (Vector2)startPos + offset.normalized * maxLineLength;
 
-            lineTip.transform.position = newPos;
+            // Only move if the new position is a water tile
+            bool isWater = true;
+            if (waterTilemap != null)
+                isWater = waterTilemap.HasTile(waterTilemap.WorldToCell(newPos));
+
+            if (isWater)
+                lineTip.transform.position = newPos;
 
             lineRenderer.SetPosition(0, transform.position);
             lineRenderer.SetPosition(1, lineTip.transform.position);

@@ -52,7 +52,7 @@ public class FishingController : MonoBehaviour
         if (FishSpawner.Instance != null)
             FishSpawner.Instance.SpawnFishNear(castPos);
 
-        lineController.StartLinePhase(castPos, bobberPrefab);
+        lineController.StartLinePhase(castPos, bobberPrefab, waterTilemap);
     }
 
     bool IsWaterAt(Vector2 worldPos)
