@@ -21,6 +21,12 @@ public class FishSpawner : MonoBehaviour
     void Awake()
     {
         Instance = this;
+
+        if (waterTilemap == null)
+        {
+            FishingController fc = FindObjectOfType<FishingController>();
+            if (fc != null) waterTilemap = fc.waterTilemap;
+        }
     }
 
     // Called at run start — no fish yet, they spawn per-cast

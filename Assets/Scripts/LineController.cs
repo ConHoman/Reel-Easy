@@ -33,6 +33,10 @@ public class LineController : MonoBehaviour
     void Awake()
     {
         ActiveInstance = this;
+
+        if (minigameManager == null)
+            minigameManager = FindObjectOfType<MinigameManager>();
+
         lineRenderer = GetComponent<LineRenderer>();
         if (lineRenderer == null)
             lineRenderer = gameObject.AddComponent<LineRenderer>();

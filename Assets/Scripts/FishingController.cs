@@ -17,6 +17,11 @@ public class FishingController : MonoBehaviour
     void Start()
     {
         movement = GetComponent<PlayerMovement>();
+
+        if (lineController == null)
+            lineController = GetComponent<LineController>();
+        if (waterTilemap == null)
+            Debug.LogWarning("FishingController: waterTilemap not assigned — assign it in the Inspector.");
     }
 
     void Update()

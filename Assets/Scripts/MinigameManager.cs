@@ -28,6 +28,12 @@ public class MinigameManager : MonoBehaviour
     private int missed;
     private List<FishData> currentFish;
 
+    void Awake()
+    {
+        if (fishingController == null)
+            fishingController = FindObjectOfType<FishingController>();
+    }
+
     // Called by LineController at the START of the snake phase
     // Shows a live countdown so the player knows to steer NOW
     public void BeginSteerPhase(float duration)

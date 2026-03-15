@@ -28,7 +28,14 @@ public class RunManager : MonoBehaviour
     {
         Instance = this;
 
+        if (fishSpawner == null)
+            fishSpawner = FindObjectOfType<FishSpawner>();
+        if (fishInventory == null)
+            fishInventory = FindObjectOfType<FishInventory>();
+
         // Hide our panel immediately so it's never visible before StartRun()
+        if (runOverPanel == null)
+            runOverPanel = GameObject.Find("RunOverPanel");
         if (runOverPanel != null) runOverPanel.SetActive(false);
 
         // Hide any leftover game over panel from the old QuestManager
