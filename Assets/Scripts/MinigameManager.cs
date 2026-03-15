@@ -135,7 +135,9 @@ public class MinigameManager : MonoBehaviour
 
     void EndMinigame()
     {
-        panel.gameObject.SetActive(false);
+        Debug.Log($"[Minigame] EndMinigame called. popped={popped} needed={bubblesNeeded} missed={missed}");
+
+        if (panel != null) panel.gameObject.SetActive(false);
 
         if (fishingController == null)
         {
@@ -146,12 +148,12 @@ public class MinigameManager : MonoBehaviour
         if (popped >= bubblesNeeded)
         {
             var caught = currentFish ?? new System.Collections.Generic.List<FishData>();
-            if (caught.Count == 0)
-                Debug.Log("Minigame won but no fish were hooked — cast again!");
+            Debug.Log($"[Minigame] Success! Fish caught: {caught.Count}");
             fishingController.CatchFishSuccess(caught);
         }
         else
         {
+            Debug.Log("[Minigame] Failed — line snapped.");
             fishingController.CatchFishFail();
         }
     }

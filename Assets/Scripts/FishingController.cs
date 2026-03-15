@@ -82,6 +82,7 @@ public class FishingController : MonoBehaviour
     // Called by MinigameManager on success
     public void CatchFishSuccess(List<FishData> caughtFish)
     {
+        Debug.Log($"[Fishing] CatchFishSuccess called. Fish: {caughtFish.Count}, Time.timeScale={Time.timeScale}");
         DestroyBobber();
 
         foreach (FishData fish in caughtFish)
@@ -104,7 +105,7 @@ public class FishingController : MonoBehaviour
     public void CatchFishFail()
     {
         DestroyBobber();
-        Debug.Log("Fish Escaped — line snapped!");
+        Debug.Log($"[Fishing] CatchFishFail called. Time.timeScale={Time.timeScale}");
 
         if (RunManager.Instance != null)
             RunManager.Instance.LineSnapped();
