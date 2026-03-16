@@ -33,7 +33,7 @@ public class LineController : MonoBehaviour
 
     private GameObject lineTip;
     private LineRenderer lineRenderer;
-    private List<FishData> hookedFish = new List<FishData>();
+    private List<CaughtFish> hookedFish = new List<CaughtFish>();
     private bool phaseActive = false;
 
     void Awake()
@@ -108,10 +108,11 @@ public class LineController : MonoBehaviour
 
             Vector3 newPos = lineTip.transform.position + (Vector3)(dir * tipSpeed * (PerkManager.Instance != null ? PerkManager.Instance.TipSpeedMultiplier : 1f) * Time.deltaTime);
 
-            // Clamp to maxLineLength from cast point
+            // Clamp to maxLineLength from cast point (scales with Chum Bucket spawn radius)
+            float effectiveMaxLength = maxLineLength * (PerkManager.Instance != null ? PerkManager.Instance.SpawnRadiusMultiplier : 1f);
             Vector2 offset = (Vector2)newPos - startPos;
-            if (offset.magnitude > maxLineLength)
-                newPos = (Vector2)startPos + offset.normalized * maxLineLength;
+            if (offset.magnitude > effectiveMaxLength)
+                newPos = (Vector2)startPos + offset.normalized * effectiveMaxLength;
 
             // Only move if the new position is a water tile
             bool isWater = true;
@@ -134,7 +135,7 @@ public class LineController : MonoBehaviour
     // Called by FishInWater when the tip enters its trigger
     public void HookFish(FishInWater fish)
     {
-        hookedFish.Add(fish.data);
+        hookedFish.Add(new CaughtFish { data = fish.data, flavor = fish.flavor });
         Destroy(fish.gameObject);
     }
 
@@ -150,6 +151,6 @@ public class LineController : MonoBehaviour
 
         lineRenderer.enabled = false;
 
-        minigameManager.StartMinigame(new List<FishData>(hookedFish));
+        minigameManager.StartMinigame(new List<CaughtFish>(hookedFish));
     }
 }

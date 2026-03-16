@@ -5,7 +5,8 @@ using UnityEngine.Tilemaps;
 // Fish flee from the bobber tip; rarer fish detect it sooner and flee faster.
 public class FishInWater : MonoBehaviour
 {
-    public FishData data;
+    public FishData   data;
+    public FishFlavor flavor = FishFlavor.None;
 
     float bobSpeed;
     float bobAmount;
@@ -34,10 +35,19 @@ public class FishInWater : MonoBehaviour
         int rarity = data != null ? data.rarity : 1;
         switch (rarity)
         {
-            case 4: detectionRadius = 3.5f; fleeSpeed = 5.0f; break; // mythical — detects from far, bolts instantly
-            case 3: detectionRadius = 2.4f; fleeSpeed = 3.2f; break; // legendary
+            case 5: detectionRadius = 3.5f; fleeSpeed = 5.0f; break; // mythical
+            case 4: detectionRadius = 2.8f; fleeSpeed = 4.0f; break; // legendary
+            case 3: detectionRadius = 2.1f; fleeSpeed = 2.5f; break; // epic
             case 2: detectionRadius = 1.8f; fleeSpeed = 1.8f; break; // uncommon
             default: detectionRadius = 1.1f; fleeSpeed = 0.8f; break; // common
+        }
+
+        // Flavors boost detection radius and flee speed based on their difficulty delta
+        int flavorDelta = FishFlavorData.Get(flavor).difficultyDelta;
+        if (flavorDelta > 0)
+        {
+            detectionRadius *= 1f + flavorDelta * 0.2f;
+            fleeSpeed       *= 1f + flavorDelta * 0.35f;
         }
     }
 
@@ -49,6 +59,11 @@ public class FishInWater : MonoBehaviour
         {
             float detMult   = PerkManager.Instance != null ? PerkManager.Instance.FishDetectionMultiplier : 1f;
             float speedMult = PerkManager.Instance != null ? PerkManager.Instance.FishFleeSpeedMultiplier : 1f;
+            if (PerkManager.Instance != null && data != null)
+            {
+                speedMult *= PerkManager.Instance.RarityFleeMultiplier(data.rarity);
+                speedMult *= PerkManager.Instance.FlavorFleeMultiplier(flavor);
+            }
 
             float dist = Vector2.Distance(startPos, tip.Value);
             if (dist < detectionRadius * detMult)

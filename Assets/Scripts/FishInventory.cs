@@ -7,9 +7,9 @@ public class FishInventory : MonoBehaviour
 {
     public static FishInventory Instance;
 
-    // Tracks count of each fish type caught this run
-    private readonly Dictionary<string, (FishData data, int count)> caught =
-        new Dictionary<string, (FishData, int)>();
+    // Tracks count of each species+flavor combo caught this run, keyed by DisplayName
+    private readonly Dictionary<string, (CaughtFish caught, int count)> caught =
+        new Dictionary<string, (CaughtFish, int)>();
 
     private GameObject panel;
     private Transform listContainer;
@@ -28,13 +28,14 @@ public class FishInventory : MonoBehaviour
             panel.SetActive(!panel.activeSelf);
     }
 
-    public void AddFish(FishData fish)
+    public void AddFish(CaughtFish cf)
     {
-        if (fish == null) return;
-        if (caught.ContainsKey(fish.fishName))
-            caught[fish.fishName] = (fish, caught[fish.fishName].count + 1);
+        if (cf.data == null) return;
+        string key = cf.DisplayName;
+        if (caught.ContainsKey(key))
+            caught[key] = (cf, caught[key].count + 1);
         else
-            caught[fish.fishName] = (fish, 1);
+            caught[key] = (cf, 1);
         RefreshList();
     }
 
@@ -161,26 +162,31 @@ public class FishInventory : MonoBehaviour
         bool alternate = false;
         foreach (var entry in caught)
         {
-            FishData fish = entry.Value.data;
-            int count = entry.Value.count;
-            int totalScore = fish.scoreValue * count;
+            CaughtFish cf   = entry.Value.caught;
+            int        count = entry.Value.count;
+            float flavorMult = FishFlavorData.Get(cf.flavor).scoreMultiplier;
+            int   totalScore = Mathf.RoundToInt(cf.data.scoreValue * flavorMult) * count;
 
-            var row = new GameObject("Row_" + fish.fishName);
+            var row = new GameObject("Row_" + cf.DisplayName);
             row.transform.SetParent(listContainer, false);
-            var rowImg = row.AddComponent<Image>();
-            rowImg.color = alternate
+            row.AddComponent<Image>().color = alternate
                 ? new Color(0.08f, 0.1f, 0.18f, 1f)
                 : new Color(0.06f, 0.08f, 0.14f, 1f);
-            var le = row.AddComponent<LayoutElement>();
-            le.preferredHeight = 14f;
+            row.AddComponent<LayoutElement>().preferredHeight = 14f;
 
-            Color rarityColor = RarityColor(fish.rarity);
-            string rarityLabel = fish.rarity == 4 ? "Mythical" : fish.rarity == 3 ? "Legendary" : fish.rarity == 2 ? "Uncommon" : "Common";
+            Color nameColor  = cf.flavor != FishFlavor.None
+                ? FishFlavorData.LabelColor(cf.flavor)
+                : RarityColor(cf.data.rarity);
+            string rarityLabel = cf.data.rarity == 5 ? "Mythical"
+                               : cf.data.rarity == 4 ? "Legendary"
+                               : cf.data.rarity == 3 ? "Epic"
+                               : cf.data.rarity == 2 ? "Uncommon"
+                               :                       "Common";
 
-            MakeColumnLabel(row.transform, fish.fishName,          0.03f, 0.45f, rarityColor);
-            MakeColumnLabel(row.transform, rarityLabel,            0.45f, 0.65f, rarityColor);
-            MakeColumnLabel(row.transform, "x" + count,           0.65f, 0.80f, Color.white);
-            MakeColumnLabel(row.transform, totalScore.ToString(),  0.80f, 1.00f, new Color(1f, 0.85f, 0.3f));
+            MakeColumnLabel(row.transform, cf.DisplayName,        0.03f, 0.45f, nameColor);
+            MakeColumnLabel(row.transform, rarityLabel,           0.45f, 0.65f, RarityColor(cf.data.rarity));
+            MakeColumnLabel(row.transform, "x" + count,          0.65f, 0.80f, Color.white);
+            MakeColumnLabel(row.transform, totalScore.ToString(), 0.80f, 1.00f, new Color(1f, 0.85f, 0.3f));
 
             alternate = !alternate;
         }
@@ -214,10 +220,11 @@ public class FishInventory : MonoBehaviour
     {
         switch (rarity)
         {
-            case 4: return new Color(1f,   0.2f,  0.8f);  // mythical  — hot pink
-            case 3: return new Color(1f,   0.75f, 0.1f);  // legendary — gold
-            case 2: return new Color(0.4f, 0.8f,  0.4f);  // uncommon  — green
-            default: return new Color(0.85f, 0.85f, 0.85f); // common  — light grey
+            case 5: return new Color(1f,    0.2f,  0.8f);   // mythical  — hot pink
+            case 4: return new Color(1f,    0.75f, 0.1f);   // legendary — gold
+            case 3: return new Color(0.2f,  0.6f,  1.0f);   // epic      — azure blue
+            case 2: return new Color(0.4f,  0.8f,  0.4f);   // uncommon  — green
+            default: return new Color(0.85f, 0.85f, 0.85f); // common    — light grey
         }
     }
 }

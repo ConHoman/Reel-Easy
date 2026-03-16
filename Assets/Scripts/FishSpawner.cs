@@ -68,14 +68,21 @@ public class FishSpawner : MonoBehaviour
             return;
         }
 
-        // Rarity-weighted pool: common (1) = weight 6, uncommon (2) = weight 2, legendary (3) = weight 1
-        // Mythical (4) only enter the pool on a 1-in-10 cast (making them ~10x rarer than a single legendary)
-        bool allowMythical = Random.value < 0.10f;
+        // Rarity-weighted pool: common=12, uncommon=3, epic=2, legendary=1
+        // Mythical (5) only enter the pool on a 4% chance per cast (boosted by Mythic Blessing)
+        float mythicalChance = Mathf.Min(1f, 0.04f * (PerkManager.Instance != null ? PerkManager.Instance.MythicalGateBonus : 1f));
+        bool allowMythical = Random.value < mythicalChance;
         List<FishData> weightedPool = new List<FishData>();
         foreach (FishData fd in fishPool)
         {
-            if (fd.rarity == 4 && !allowMythical) continue;
-            int weight = fd.rarity == 4 ? 1 : fd.rarity == 1 ? 6 : fd.rarity == 2 ? 2 : 1;
+            if (fd.rarity == 5 && !allowMythical) continue;
+            int baseWeight = fd.rarity == 5 ? 1
+                           : fd.rarity == 1 ? 12
+                           : fd.rarity == 2 ? 3
+                           : fd.rarity == 3 ? 2
+                           :                  1;  // legendary (4)
+            int bonus  = PerkManager.Instance != null ? PerkManager.Instance.RaritySpawnBonus(fd.rarity) : 0;
+            int weight = baseWeight + bonus;
             for (int w = 0; w < weight; w++)
                 weightedPool.Add(fd);
         }
@@ -94,33 +101,43 @@ public class FishSpawner : MonoBehaviour
             {
                 fw.data = weightedPool[Random.Range(0, weightedPool.Count)];
 
+                float albino  = PerkManager.Instance != null ? PerkManager.Instance.FlavorSpawnMultiplier(FishFlavor.Albino)  : 1f;
+                float shiny   = PerkManager.Instance != null ? PerkManager.Instance.FlavorSpawnMultiplier(FishFlavor.Shiny)   : 1f;
+                float ancient = PerkManager.Instance != null ? PerkManager.Instance.FlavorSpawnMultiplier(FishFlavor.Ancient) : 1f;
+                float giant   = PerkManager.Instance != null ? PerkManager.Instance.FlavorSpawnMultiplier(FishFlavor.Giant)   : 1f;
+                float golden  = PerkManager.Instance != null ? PerkManager.Instance.FlavorSpawnMultiplier(FishFlavor.Golden)  : 1f;
+                float cursed  = PerkManager.Instance != null ? PerkManager.Instance.FlavorSpawnMultiplier(FishFlavor.Cursed)  : 1f;
+                fw.flavor = FishFlavorData.RollWithMultipliers(albino, shiny, ancient, giant, golden, cursed);
+
                 SpriteRenderer sr = fish.GetComponent<SpriteRenderer>();
                 if (sr != null)
                 {
-                    if (fw.data.fishSprite != null)
-                        sr.sprite = fw.data.fishSprite;
-                    else if (sr.sprite == null)
-                        sr.sprite = FallbackSprite();
+                    // Always assign the sprite — never fall back to the prefab's default,
+                    // which would show the real fish model instead of a shadow.
+                    sr.sprite = fw.data.fishSprite != null ? fw.data.fishSprite : FallbackSprite();
 
-                    // Shadow size and tint hints rarity without giving it away
+                    // Scale: rarity base × flavor multiplier
+                    float baseScale;
                     switch (fw.data.rarity)
                     {
-                        case 1: // common — small dark shadow
-                            sr.color = new Color(0f, 0.05f, 0.15f, 0.4f);
-                            fish.transform.localScale = Vector3.one * 0.45f;
-                            break;
-                        case 2: // uncommon — medium, blue tint
-                            sr.color = new Color(0f, 0.1f, 0.3f, 0.55f);
-                            fish.transform.localScale = Vector3.one * 0.6f;
-                            break;
-                        case 3: // legendary — large, purple tint
-                            sr.color = new Color(0.15f, 0f, 0.25f, 0.65f);
-                            fish.transform.localScale = Vector3.one * 0.8f;
-                            break;
-                        case 4: // mythical — large, hot pink shimmer
-                            sr.color = new Color(0.4f, 0f, 0.3f, 0.85f);
-                            fish.transform.localScale = Vector3.one * 1.0f;
-                            break;
+                        case 5: baseScale = 1.0f;  break; // mythical
+                        case 4: baseScale = 0.8f;  break; // legendary
+                        case 3: baseScale = 0.7f;  break; // epic
+                        case 2: baseScale = 0.6f;  break; // uncommon
+                        default: baseScale = 0.45f; break; // common
+                    }
+                    fish.transform.localScale = Vector3.one * baseScale * FishFlavorData.Get(fw.flavor).scaleMultiplier;
+
+                    // All fish appear as dark rarity shadows in the water — flavor is hidden until caught.
+                    // Size (scale) is the only in-water hint that something special may be lurking.
+                    switch (fw.data.rarity)
+                    {
+                        case 5: sr.color = new Color(0.40f, 0f,    0.30f, 0.85f); break; // mythical
+                        case 4: sr.color = new Color(0.15f, 0f,    0.25f, 0.65f); break; // legendary
+                        case 3: sr.color = new Color(0.05f, 0.05f, 0.30f, 0.60f); break; // epic
+                        case 2: sr.color = new Color(0f,    0.10f, 0.30f, 0.55f); break; // uncommon
+                        case 1: sr.color = new Color(0f,    0.05f, 0.15f, 0.40f); break; // common
+                        default: sr.color = new Color(0f,   0.05f, 0.15f, 0.40f); break;
                     }
 
                     sr.sortingLayerName = "Default";

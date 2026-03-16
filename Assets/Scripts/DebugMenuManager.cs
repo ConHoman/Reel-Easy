@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// Press F2 to toggle.
+// Press ` (backtick) to toggle.
 // LAUNCH tab  — pick a minigame type, set params, launch it.
 // PERKS  tab  — click any perk to add a stack; click again to remove one stack.
 public class DebugMenuManager : MonoBehaviour
@@ -48,7 +48,7 @@ public class DebugMenuManager : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.F2))
+        if (Input.GetKeyDown(KeyCode.BackQuote))
             SetOpen(!panelOpen);
     }
 
@@ -100,7 +100,7 @@ public class DebugMenuManager : MonoBehaviour
         titleLbl.alignment = TextAlignmentOptions.Left;
 
         // Close button sits in the title bar area but child of panel so it's clickable on top
-        var closeBtn = DBButton(p, "X  [F2]",
+        var closeBtn = DBButton(p, "X  [`]",
             new Vector2(0.80f, 0.925f), new Vector2(0.99f, 0.990f),
             new Color(0.55f, 0.08f, 0.08f), 6f);
         closeBtn.onClick.AddListener(() => SetOpen(false));
@@ -183,9 +183,14 @@ public class DebugMenuManager : MonoBehaviour
         MakeStepControl(t, "Fish Rarity:", launchRarity,    1,  3, top - rh * 2 - gap, v => launchRarity = v);
         MakeStepControl(t, "Fish Count:",  launchFishCount, 1,  8, top - rh * 3 - gap * 2, v => launchFishCount = v);
 
-        // LAUNCH button  ──── y 0.03 – 0.16
+        // LAUNCH button (right) + GIVE ALL FISH button (left)  ──── y 0.03 – 0.16
+        var giveAllBtn = DBButton(t, "GIVE ALL FISH",
+            new Vector2(0.02f, 0.03f), new Vector2(0.44f, 0.16f),
+            new Color(0.10f, 0.28f, 0.42f), 6f);
+        giveAllBtn.onClick.AddListener(GiveAllFish);
+
         var launchBtn = DBButton(t, "LAUNCH  ▶",
-            new Vector2(0.05f, 0.03f), new Vector2(0.95f, 0.16f),
+            new Vector2(0.46f, 0.03f), new Vector2(0.98f, 0.16f),
             new Color(0.08f, 0.50f, 0.08f), 8.5f);
         launchBtn.onClick.AddListener(LaunchMinigame);
     }
@@ -323,6 +328,13 @@ public class DebugMenuManager : MonoBehaviour
             case PerkCategory.Minigame: return new Color(0.34f, 0.10f, 0.48f);
             default:                    return new Color(0.20f, 0.20f, 0.40f);
         }
+    }
+
+    void GiveAllFish()
+    {
+        if (FishJournal.Instance == null) return;
+        foreach (var fish in FishDatabase.CreateAll())
+            FishJournal.Instance.Discover(fish.fishName);
     }
 
     void LaunchMinigame()

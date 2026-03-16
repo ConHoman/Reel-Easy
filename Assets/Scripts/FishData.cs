@@ -8,4 +8,5 @@ public class FishData : ScriptableObject
     [Range(1, 5)] public int difficulty = 1;
     [Range(1, 4)] public int rarity = 1;
     public int scoreValue = 100;
+    [TextArea] public string flavorText;
 }

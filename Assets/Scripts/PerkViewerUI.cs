@@ -1,15 +1,17 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-// Press Q to open/close. Shows all active perks with stacks, effects, and category colours.
+// Press Q to open/close. Shows all active perks as a formatted text list.
 public class PerkViewerUI : MonoBehaviour
 {
     public static PerkViewerUI Instance;
 
     private GameObject viewerPanel;
-    private Transform  listContent;   // VerticalLayoutGroup content inside the ScrollRect
+    private TMP_Text   listText;
+    private TMP_Text   statsText;
 
     void Awake()
     {
@@ -34,98 +36,103 @@ public class PerkViewerUI : MonoBehaviour
         }
     }
 
-    // ── UI build (panel + scrollable list) ────────────────────────────────────
+    // ── Build ─────────────────────────────────────────────────────────────────
 
     void BuildUI()
     {
         Canvas canvas = UICanvas.Get();
 
-        // ── Outer panel ──────────────────────────────────────────────────────
+        // Panel backdrop
         viewerPanel = new GameObject("PerkViewerPanel");
         viewerPanel.transform.SetParent(canvas.transform, false);
-        viewerPanel.AddComponent<Image>().color = new Color(0.04f, 0.06f, 0.13f, 0.95f);
+        viewerPanel.AddComponent<Image>().color = new Color(0.04f, 0.06f, 0.13f, 0.96f);
         var panelRT = viewerPanel.GetComponent<RectTransform>();
         panelRT.anchorMin = new Vector2(0.10f, 0.06f);
         panelRT.anchorMax = new Vector2(0.90f, 0.94f);
         panelRT.offsetMin = panelRT.offsetMax = Vector2.zero;
 
-        Transform p = viewerPanel.transform;
+        // Title bar
+        var titleBarGO = new GameObject("TitleBar");
+        titleBarGO.transform.SetParent(viewerPanel.transform, false);
+        titleBarGO.AddComponent<Image>().color = new Color(0.08f, 0.11f, 0.24f);
+        var tbRT = titleBarGO.GetComponent<RectTransform>();
+        tbRT.anchorMin = new Vector2(0f, 0.90f);
+        tbRT.anchorMax = Vector2.one;
+        tbRT.offsetMin = tbRT.offsetMax = Vector2.zero;
 
-        // ── Title bar (top 10%) ───────────────────────────────────────────────
-        var titleBG = PVRect(p, "TitleBG", new Color(0.08f, 0.11f, 0.24f));
-        titleBG.anchorMin = new Vector2(0f, 0.90f);
-        titleBG.anchorMax = Vector2.one;
-        titleBG.offsetMin = titleBG.offsetMax = Vector2.zero;
+        var titleTxt = new GameObject("TitleTxt");
+        titleTxt.transform.SetParent(titleBarGO.transform, false);
+        var tt = titleTxt.AddComponent<TextMeshProUGUI>();
+        tt.text      = "Active Perks";
+        tt.fontSize  = 8.5f;
+        tt.color     = Color.white;
+        tt.alignment = TextAlignmentOptions.Left;
+        tt.fontStyle = FontStyles.Bold;
+        var ttRT = titleTxt.GetComponent<RectTransform>();
+        ttRT.anchorMin = new Vector2(0.02f, 0f);
+        ttRT.anchorMax = new Vector2(0.70f, 1f);
+        ttRT.offsetMin = ttRT.offsetMax = Vector2.zero;
 
-        var titleLbl = PVLabel(titleBG, "Active Perks", 8.5f, Color.white);
-        var tlRT = titleLbl.GetComponent<RectTransform>();
-        tlRT.anchorMin = new Vector2(0.02f, 0f); tlRT.anchorMax = new Vector2(0.72f, 1f);
-        tlRT.offsetMin = tlRT.offsetMax = Vector2.zero;
-        titleLbl.alignment = TextAlignmentOptions.Left;
-        titleLbl.fontStyle = FontStyles.Bold;
+        var closeTxt = new GameObject("CloseTxt");
+        closeTxt.transform.SetParent(titleBarGO.transform, false);
+        var ct = closeTxt.AddComponent<TextMeshProUGUI>();
+        ct.text      = "[Q] close";
+        ct.fontSize  = 5.5f;
+        ct.color     = new Color(0.6f, 0.6f, 0.8f);
+        ct.alignment = TextAlignmentOptions.Right;
+        var ctRT = closeTxt.GetComponent<RectTransform>();
+        ctRT.anchorMin = new Vector2(0.72f, 0f);
+        ctRT.anchorMax = new Vector2(0.97f, 1f);
+        ctRT.offsetMin = ctRT.offsetMax = Vector2.zero;
 
-        var closeLbl = PVLabel(titleBG, "[Q] close", 5.5f, new Color(0.6f, 0.6f, 0.8f));
-        var clRT = closeLbl.GetComponent<RectTransform>();
-        clRT.anchorMin = new Vector2(0.74f, 0f); clRT.anchorMax = Vector2.one;
-        clRT.offsetMin = clRT.offsetMax = Vector2.zero;
-        closeLbl.alignment = TextAlignmentOptions.Right;
+        // Left column: active perk list — word wrap keeps text within column bounds
+        var listGO = new GameObject("PerkListText");
+        listGO.transform.SetParent(viewerPanel.transform, false);
+        listText = listGO.AddComponent<TextMeshProUGUI>();
+        listText.fontSize           = 5.5f;
+        listText.color              = Color.white;
+        listText.enableWordWrapping = true;
+        listText.overflowMode       = TextOverflowModes.Overflow;
+        var listRT = listGO.GetComponent<RectTransform>();
+        listRT.anchorMin = new Vector2(0.02f, 0.02f);
+        listRT.anchorMax = new Vector2(0.58f, 0.89f);
+        listRT.offsetMin = listRT.offsetMax = Vector2.zero;
 
-        // ── ScrollRect (y = 0.01 – 0.89) ─────────────────────────────────────
-        var scrollGO = new GameObject("ScrollArea");
-        scrollGO.transform.SetParent(p, false);
-        var scrollRT = scrollGO.AddComponent<RectTransform>();
-        scrollRT.anchorMin = new Vector2(0f, 0.01f);
-        scrollRT.anchorMax = new Vector2(1f, 0.89f);
-        scrollRT.offsetMin = scrollRT.offsetMax = Vector2.zero;
-        var scrollRect = scrollGO.AddComponent<ScrollRect>();
-        scrollRect.horizontal = false;
-        scrollRect.scrollSensitivity = 20f;
-        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        // Divider between columns
+        var divGO = new GameObject("ColumnDivider");
+        divGO.transform.SetParent(viewerPanel.transform, false);
+        divGO.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.10f);
+        var divRT = divGO.GetComponent<RectTransform>();
+        divRT.anchorMin = new Vector2(0.60f, 0.02f);
+        divRT.anchorMax = new Vector2(0.61f, 0.89f);
+        divRT.offsetMin = divRT.offsetMax = Vector2.zero;
 
-        // Viewport (masked)
-        var vpGO = new GameObject("Viewport");
-        vpGO.transform.SetParent(scrollGO.transform, false);
-        vpGO.AddComponent<Image>().color = Color.clear;
-        vpGO.AddComponent<Mask>().showMaskGraphic = false;
-        var vpRT = vpGO.GetComponent<RectTransform>();
-        vpRT.anchorMin = Vector2.zero; vpRT.anchorMax = Vector2.one;
-        vpRT.offsetMin = vpRT.offsetMax = Vector2.zero;
-
-        // Content (grows downward via VLG + CSF)
-        var contentGO = new GameObject("Content");
-        contentGO.transform.SetParent(vpGO.transform, false);
-        var vlg = contentGO.AddComponent<VerticalLayoutGroup>();
-        vlg.spacing = 2f;
-        vlg.padding = new RectOffset(4, 4, 4, 4);
-        vlg.childForceExpandWidth  = true;
-        vlg.childForceExpandHeight = false;
-        vlg.childControlHeight = true;
-        vlg.childControlWidth  = true;
-        var csf = contentGO.AddComponent<ContentSizeFitter>();
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-        var contentRT = contentGO.GetComponent<RectTransform>();
-        contentRT.anchorMin = new Vector2(0f, 1f);
-        contentRT.anchorMax = new Vector2(1f, 1f);
-        contentRT.pivot      = new Vector2(0.5f, 1f);
-        contentRT.sizeDelta  = Vector2.zero;
-
-        scrollRect.content  = contentRT;
-        scrollRect.viewport = vpRT;
-        listContent = contentGO.transform;
+        // Right column: stat spread
+        var statsGO = new GameObject("StatsText");
+        statsGO.transform.SetParent(viewerPanel.transform, false);
+        statsText = statsGO.AddComponent<TextMeshProUGUI>();
+        statsText.fontSize           = 5f;
+        statsText.color              = Color.white;
+        statsText.enableWordWrapping = false;
+        statsText.overflowMode       = TextOverflowModes.Truncate;
+        var statsRT = statsGO.GetComponent<RectTransform>();
+        statsRT.anchorMin = new Vector2(0.62f, 0.02f);
+        statsRT.anchorMax = new Vector2(0.98f, 0.89f);
+        statsRT.offsetMin = statsRT.offsetMax = Vector2.zero;
 
         viewerPanel.SetActive(false);
     }
 
-    // ── Populate list ─────────────────────────────────────────────────────────
+    // ── Populate ──────────────────────────────────────────────────────────────
 
     void Populate()
     {
-        // Clear old rows
-        foreach (Transform c in listContent) Destroy(c.gameObject);
+        if (listText == null) return;
 
         if (PerkManager.Instance == null || PerkManager.Instance.ActivePerks.Count == 0)
         {
-            AddEmptyRow("No perks yet.");
+            listText.text = "\n<color=#8888BB>  No perks yet.</color>";
+            if (statsText != null) statsText.text = "";
             return;
         }
 
@@ -133,124 +140,115 @@ public class PerkViewerUI : MonoBehaviour
         var counts = new Dictionary<PerkType, int>();
         foreach (var p in PerkManager.Instance.ActivePerks)
         {
-            if (!counts.TryGetValue(p, out int n)) counts[p] = 1;
-            else counts[p] = n + 1;
+            if (!counts.ContainsKey(p)) counts[p] = 0;
+            counts[p]++;
         }
 
-        // Build ordered list matching AllPerks order, grouped by category
+        var sb = new StringBuilder();
         PerkCategory? lastCat = null;
+
         foreach (var def in PerkManager.AllPerks)
         {
             if (!counts.TryGetValue(def.type, out int stacks)) continue;
 
-            // Category header when category changes
+            // Category header
             if (def.category != lastCat)
             {
+                if (lastCat != null) sb.AppendLine();
                 lastCat = def.category;
-                AddCategoryHeader(def.category);
+                string catHex = CategoryHex(def.category);
+                sb.AppendLine($"<color={catHex}><b>-- {def.category.ToString().ToUpper()} --</b></color>");
             }
 
-            AddPerkRow(def, stacks);
+            // Perk row
+            string stackStr = stacks > 1 ? $" <color=#FFD700><b>x{stacks}</b></color>" : "";
+            sb.Append($"  <b>{def.displayName}</b>{stackStr}");
+            sb.Append($"   <color=#55EE77>{def.upside}</color>");
+            if (!string.IsNullOrEmpty(def.downside))
+                sb.Append($"   <color=#FF7777>{def.downside}</color>");
+            sb.AppendLine();
         }
+
+        listText.text = sb.ToString();
+        PopulateStats();
     }
 
-    void AddCategoryHeader(PerkCategory cat)
+    // ── Stats ─────────────────────────────────────────────────────────────────
+
+    void PopulateStats()
     {
-        var go = new GameObject("CatHdr");
-        go.transform.SetParent(listContent, false);
+        if (statsText == null) return;
+        var pm = PerkManager.Instance;
+        if (pm == null) { statsText.text = ""; return; }
 
-        go.AddComponent<Image>().color = new Color(
-            CategoryColor(cat).r * 0.35f,
-            CategoryColor(cat).g * 0.35f,
-            CategoryColor(cat).b * 0.35f, 1f);
+        var sb = new StringBuilder();
 
-        var le = go.AddComponent<LayoutElement>();
-        le.preferredHeight = 11f;
+        // ── Fishing ──────────────────────────────────────────────────────────
+        sb.AppendLine("<color=#AAAADD><b>STATS</b></color>");
+        sb.AppendLine("<color=#44DDCC><b>Fishing</b></color>");
+        Stat(sb, "Spawn radius",  $"x{pm.SpawnRadiusMultiplier:F2}",    pm.SpawnRadiusMultiplier    != 1f, true);
+        Stat(sb, "Max fish/cast", pm.SpawnCountBonus > 0 ? $"+{pm.SpawnCountBonus}" : "+0",
+                                                                          pm.SpawnCountBonus          != 0,  true);
+        Stat(sb, "Steer time",    $"x{pm.SteerDurationMultiplier:F2}",  pm.SteerDurationMultiplier  != 1f, true);
+        Stat(sb, "Bobber speed",  $"x{pm.TipSpeedMultiplier:F2}",       pm.TipSpeedMultiplier       != 1f, true);
+        Stat(sb, "Hitbox size",   $"x{pm.HitboxMultiplier:F2}",         pm.HitboxMultiplier         != 1f, true);
 
-        var txt = PVLabel(go.transform, cat.ToString().ToUpper(), 5.5f, CategoryColor(cat));
-        txt.fontStyle  = FontStyles.Bold;
-        txt.alignment  = TextAlignmentOptions.Left;
-        var tRT = txt.GetComponent<RectTransform>();
-        tRT.anchorMin = new Vector2(0.02f, 0f); tRT.anchorMax = Vector2.one;
-        tRT.offsetMin = tRT.offsetMax = Vector2.zero;
+        // ── Rarity ───────────────────────────────────────────────────────────
+        sb.AppendLine("<color=#44DDCC><b>Rarity</b></color>");
+
+        string[] rarityNames = { "Common", "Uncommon", "Epic", "Legendary" };
+        for (int r = 1; r <= 4; r++)
+        {
+            int bonus = pm.RaritySpawnBonus(r);
+            float flee = pm.RarityFleeMultiplier(r);
+            string spawnVal = bonus > 0 ? $"+{bonus}" : "+0";
+            string fleeVal  = $"x{flee:F2}";
+            bool spawnMod   = bonus  != 0;
+            bool fleeMod    = Mathf.Abs(flee - 1f) > 0.01f;
+            // spawn
+            Stat(sb, $"{rarityNames[r-1]} spawn", spawnVal, spawnMod, true);
+            // flee — only show if a perk modified it
+            if (fleeMod)
+                Stat(sb, $"{rarityNames[r-1]} flee", fleeVal, true, false);
+        }
+
+        float mg = pm.MythicalGateBonus;
+        Stat(sb, "Mythical gate", $"x{mg:F2}", Mathf.Abs(mg - 1f) > 0.01f, true);
+
+        // ── Variants ─────────────────────────────────────────────────────────
+        sb.AppendLine("<color=#44DDCC><b>Variants</b></color>");
+
+        FishFlavor[] flavors      = { FishFlavor.Albino, FishFlavor.Shiny, FishFlavor.Ancient,
+                                      FishFlavor.Giant,  FishFlavor.Golden, FishFlavor.Cursed };
+        string[]     flavorNames  = { "Albino", "Shiny", "Ancient", "Giant", "Golden", "Cursed" };
+
+        for (int i = 0; i < flavors.Length; i++)
+        {
+            float spawn = pm.FlavorSpawnMultiplier(flavors[i]);
+            float flee  = pm.FlavorFleeMultiplier(flavors[i]);
+            bool spawnMod = Mathf.Abs(spawn - 1f) > 0.01f;
+            bool fleeMod  = Mathf.Abs(flee  - 1f) > 0.01f;
+            Stat(sb, $"{flavorNames[i]} spawn", $"x{spawn:F1}", spawnMod, true);
+            if (fleeMod)
+                Stat(sb, $"{flavorNames[i]} flee", $"x{flee:F2}", true, false);
+        }
+
+        // ── Safety ───────────────────────────────────────────────────────────
+        sb.AppendLine("<color=#66AAFF><b>Safety</b></color>");
+        bool snapMod = pm.LinesLostOnSnap != 1;
+        Stat(sb, "Lines/snap", pm.LinesLostOnSnap.ToString(), snapMod, false);
+
+        statsText.text = sb.ToString();
     }
 
-    void AddPerkRow(PerkDefinition def, int stacks)
+    // Single stat row — uses <pos=55> so the value column lines up regardless of label length
+    static void Stat(StringBuilder sb, string label, string val, bool modified, bool higherIsBetter)
     {
-        var rowGO = new GameObject("Row_" + def.displayName);
-        rowGO.transform.SetParent(listContent, false);
-
-        // Alternating row background
-        rowGO.AddComponent<Image>().color = new Color(0.07f, 0.09f, 0.17f, 1f);
-
-        // Horizontal layout: [colour bar] [text block]
-        var hlg = rowGO.AddComponent<HorizontalLayoutGroup>();
-        hlg.spacing            = 4f;
-        hlg.padding            = new RectOffset(0, 4, 2, 2);
-        hlg.childForceExpandHeight = true;
-        hlg.childForceExpandWidth  = false;
-        hlg.childControlHeight = true;
-        hlg.childControlWidth  = true;
-
-        // Row auto-sizes to its text
-        rowGO.AddComponent<ContentSizeFitter>().verticalFit =
-            ContentSizeFitter.FitMode.PreferredSize;
-
-        // Left colour bar
-        var barGO = new GameObject("Bar");
-        barGO.transform.SetParent(rowGO.transform, false);
-        barGO.AddComponent<Image>().color = CategoryColor(def.category);
-        barGO.AddComponent<LayoutElement>().preferredWidth = 4f;
-
-        // Text content
-        var textGO = new GameObject("Text");
-        textGO.transform.SetParent(rowGO.transform, false);
-        var tmp = textGO.AddComponent<TextMeshProUGUI>();
-        tmp.fontSize          = 5.5f;
-        tmp.color             = Color.white;
-        tmp.enableWordWrapping = true;
-        tmp.text              = BuildRowText(def, stacks);
-        textGO.AddComponent<LayoutElement>().flexibleWidth = 1f;
-    }
-
-    void AddEmptyRow(string message)
-    {
-        var go = new GameObject("Empty");
-        go.transform.SetParent(listContent, false);
-        go.AddComponent<LayoutElement>().preferredHeight = 20f;
-        var lbl = PVLabel(go.transform, message, 6f, new Color(0.5f, 0.5f, 0.7f));
-        lbl.alignment = TextAlignmentOptions.Center;
-    }
-
-    static string BuildRowText(PerkDefinition def, int stacks)
-    {
-        string stackBadge = stacks > 1
-            ? $"  <color=#FFD700><b>×{stacks}</b></color>"
-            : "";
-
-        string catHex = CategoryHex(def.category);
-        string line1  = $"<b>{def.displayName}</b>{stackBadge}  <color={catHex}>[{def.category}]</color>";
-
-        string line2 = $"<color=#55EE77>+ {def.upside}</color>";
-        if (!string.IsNullOrEmpty(def.downside))
-            line2 += $"    <color=#FF7777>- {def.downside}</color>";
-
-        return line1 + "\n" + line2;
+        string hex = !modified ? "#888888" : (higherIsBetter ? "#55EE77" : "#FF7777");
+        sb.AppendLine($"  {label}<pos=55><color={hex}><b>{val}</b></color>");
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    static Color CategoryColor(PerkCategory cat)
-    {
-        switch (cat)
-        {
-            case PerkCategory.Safety:   return new Color(0.40f, 0.65f, 1.00f);
-            case PerkCategory.Fishing:  return new Color(0.27f, 0.90f, 0.80f);
-            case PerkCategory.Scoring:  return new Color(1.00f, 0.87f, 0.20f);
-            case PerkCategory.Minigame: return new Color(0.80f, 0.53f, 1.00f);
-            default:                    return Color.white;
-        }
-    }
 
     static string CategoryHex(PerkCategory cat)
     {
@@ -262,28 +260,5 @@ public class PerkViewerUI : MonoBehaviour
             case PerkCategory.Minigame: return "#CC88FF";
             default:                    return "#FFFFFF";
         }
-    }
-
-    static RectTransform PVRect(Transform parent, string name, Color color)
-    {
-        var go = new GameObject(name);
-        go.transform.SetParent(parent, false);
-        go.AddComponent<Image>().color = color;
-        return go.GetComponent<RectTransform>();
-    }
-
-    static TMP_Text PVLabel(Transform parent, string text, float size, Color color)
-    {
-        var go = new GameObject("Lbl");
-        go.transform.SetParent(parent, false);
-        var tmp = go.AddComponent<TextMeshProUGUI>();
-        tmp.text      = text;
-        tmp.fontSize  = size;
-        tmp.color     = color;
-        tmp.alignment = TextAlignmentOptions.Center;
-        var rt = go.GetComponent<RectTransform>();
-        rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
-        rt.offsetMin = rt.offsetMax = Vector2.zero;
-        return tmp;
     }
 }

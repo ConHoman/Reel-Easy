@@ -71,12 +71,22 @@ public class RunManager : MonoBehaviour
         UpdateUI();
     }
 
-    public void OnFishCaught(FishData fish)
+    public void OnFishCaught(CaughtFish caught)
     {
         fishCaught++;
-        int score = PerkManager.Instance != null ? PerkManager.Instance.GetScoreForFish(fish) : fish.scoreValue;
+        int score = PerkManager.Instance != null
+            ? PerkManager.Instance.GetScoreForCaught(caught, linesRemaining, fishCaught)
+            : Mathf.RoundToInt(caught.data.scoreValue * FishFlavorData.Get(caught.flavor).scoreMultiplier);
         runScore += score;
-        if (score > bestFishScore) { bestFishScore = score; bestFishName = fish.fishName; }
+        if (score > bestFishScore) { bestFishScore = score; bestFishName = caught.DisplayName; }
+
+        // Mythic Blessing penalty: every non-Mythical catch costs 1 line
+        if (PerkManager.Instance != null && PerkManager.Instance.MythicBlessingPenalty && caught.data.rarity != 5)
+        {
+            linesRemaining--;
+            if (linesRemaining <= 0) { UpdateUI(); EndRun(); return; }
+        }
+
         UpdateUI();
     }
 

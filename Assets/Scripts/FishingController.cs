@@ -75,23 +75,27 @@ public class FishingController : MonoBehaviour
     }
 
     // Called by MinigameManager on success
-    public void CatchFishSuccess(List<FishData> caughtFish)
+    public void CatchFishSuccess(List<CaughtFish> caughtFish)
     {
         Debug.Log($"[Fishing] CatchFishSuccess called. Fish: {caughtFish.Count}, Time.timeScale={Time.timeScale}");
 
-        foreach (FishData fish in caughtFish)
+        foreach (CaughtFish cf in caughtFish)
         {
             if (FishJournal.Instance != null)
-                FishJournal.Instance.Discover(fish.fishName);
+            {
+                FishJournal.Instance.Discover(cf.data.fishName);
+                if (cf.flavor != FishFlavor.None)
+                    FishJournal.Instance.DiscoverFlavor(cf.data.fishName, cf.flavor);
+            }
 
             if (FishInventory.Instance != null)
-                FishInventory.Instance.AddFish(fish);
+                FishInventory.Instance.AddFish(cf);
 
             if (RunManager.Instance != null)
-                RunManager.Instance.OnFishCaught(fish);
+                RunManager.Instance.OnFishCaught(cf);
 
             if (fishPopup != null)
-                fishPopup.ShowMessage("Caught a " + fish.fishName + "!");
+                fishPopup.ShowMessage("Caught a " + cf.DisplayName + "!");
         }
 
         if (caughtFish.Count > 0 && RunManager.Instance != null)

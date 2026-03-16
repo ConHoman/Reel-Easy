@@ -27,7 +27,7 @@ public class MinigameManager : MonoBehaviour
     private int popped;
     private int missed;
     private int currentAllowedMisses;
-    private List<FishData> currentFish;
+    private List<CaughtFish> currentFish;
     private GameObject minigameContent;
 
     private enum MinigameType { BubblePop, TimingBar, ButtonMash, HoldZone, TugOfWar, RingDodge }
@@ -98,30 +98,24 @@ public class MinigameManager : MonoBehaviour
         if (hintText != null) hintText.enabled = false;
     }
 
-    public void StartMinigame(List<FishData> hookedFish)
+    public void StartMinigame(List<CaughtFish> hookedFish)
     {
         currentFish = hookedFish;
 
         if (hookedFish.Count == 0)
         {
             // Nothing hooked — skip minigame entirely, count as a successful cast
+            if (panel != null) panel.gameObject.SetActive(false);
             if (fishingController != null)
-                fishingController.CatchFishSuccess(hookedFish);
+                fishingController.CatchFishSuccess(hookedFish ?? new List<CaughtFish>());
             return;
         }
 
         int totalDifficulty = 0;
-        if (hookedFish.Count == 0)
-        {
-            bubblesNeeded = baseBubblesNeeded;
-            bubbleLifetime = baseBubbleLifetime;
-        }
-        else
-        {
-            foreach (FishData f in hookedFish) totalDifficulty += f.difficulty;
-            bubblesNeeded = baseBubblesNeeded + totalDifficulty;
-            bubbleLifetime = Mathf.Max(minBubbleLifetime, baseBubbleLifetime - totalDifficulty * lifetimeReductionPerDifficulty);
-        }
+        foreach (CaughtFish cf in hookedFish)
+            totalDifficulty += Mathf.Min(5, cf.data.difficulty + FishFlavorData.Get(cf.flavor).difficultyDelta);
+        bubblesNeeded  = baseBubblesNeeded + totalDifficulty;
+        bubbleLifetime = Mathf.Max(minBubbleLifetime, baseBubbleLifetime - totalDifficulty * lifetimeReductionPerDifficulty);
 
         if (PerkManager.Instance != null)
         {
@@ -141,10 +135,10 @@ public class MinigameManager : MonoBehaviour
             else
             {
                 var names = new List<string>();
-                foreach (FishData f in hookedFish)
+                foreach (CaughtFish cf in hookedFish)
                 {
-                    bool known = FishJournal.Instance != null && FishJournal.Instance.IsDiscovered(f.fishName);
-                    names.Add(known ? f.fishName : "???");
+                    bool known = FishJournal.Instance != null && FishJournal.Instance.IsDiscovered(cf.data.fishName);
+                    names.Add(known ? cf.DisplayName : "???");
                 }
                 hookedInfoText.text = "Hooked: " + string.Join(", ", names);
             }
@@ -219,7 +213,7 @@ public class MinigameManager : MonoBehaviour
             return;
         }
         if (success)
-            fishingController.CatchFishSuccess(currentFish ?? new List<FishData>());
+            fishingController.CatchFishSuccess(currentFish ?? new List<CaughtFish>());
         else
             fishingController.CatchFishFail();
     }
@@ -583,7 +577,9 @@ public class MinigameManager : MonoBehaviour
     // Called by DebugMenuManager to launch a specific minigame with fake fish.
     public void ForceMinigame(int typeIndex, List<FishData> fish)
     {
-        currentFish = fish;
+        var converted = new List<CaughtFish>();
+        foreach (var f in fish) converted.Add(new CaughtFish { data = f, flavor = FishFlavor.None });
+        currentFish = converted;
         int totalDifficulty = 0;
         foreach (var f in fish) totalDifficulty += f.difficulty;
         bubblesNeeded   = baseBubblesNeeded + totalDifficulty;

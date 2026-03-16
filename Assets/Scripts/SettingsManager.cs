@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 
 public class SettingsManager : MonoBehaviour
@@ -38,6 +39,9 @@ public class SettingsManager : MonoBehaviour
         // Pause while settings is open, but don't fight the perk picker (timeScale 0)
         if (open && Time.timeScale != 0f) Time.timeScale = 0f;
         else if (!open)                   Time.timeScale = 1f;
+        // Deselect any focused UI element so Space doesn't re-trigger buttons during minigames
+        if (EventSystem.current != null)
+            EventSystem.current.SetSelectedGameObject(null);
     }
 
     void BuildUI()
@@ -74,8 +78,8 @@ public class SettingsManager : MonoBehaviour
         settingsPanel.transform.SetParent(canvas.transform, false);
         settingsPanel.AddComponent<Image>().color = new Color(0.05f, 0.07f, 0.14f, 0.97f);
         var panelRT = settingsPanel.GetComponent<RectTransform>();
-        panelRT.anchorMin = new Vector2(0.2f, 0.15f);
-        panelRT.anchorMax = new Vector2(0.8f, 0.85f);
+        panelRT.anchorMin = new Vector2(0.18f, 0.08f);
+        panelRT.anchorMax = new Vector2(0.82f, 0.92f);
         panelRT.offsetMin = panelRT.offsetMax = Vector2.zero;
 
         // Title bar
@@ -87,8 +91,8 @@ public class SettingsManager : MonoBehaviour
 
         // ── Hints toggle ──────────────────────────────────────
         var hintsBG = MakeRect(settingsPanel.transform, "HintsBG", new Color(0.08f, 0.1f, 0.2f, 1f));
-        hintsBG.anchorMin = new Vector2(0.05f, 0.72f);
-        hintsBG.anchorMax = new Vector2(0.95f, 0.84f);
+        hintsBG.anchorMin = new Vector2(0.05f, 0.76f);
+        hintsBG.anchorMax = new Vector2(0.95f, 0.85f);
         hintsBG.offsetMin = hintsBG.offsetMax = Vector2.zero;
 
         var hintsGO = new GameObject("HintsToggle");
@@ -100,40 +104,53 @@ public class SettingsManager : MonoBehaviour
         hintsToggleLabel.alignment = TextAlignmentOptions.Center;
         hintsToggleLabel.color = Color.white;
         var hintsRT = hintsGO.GetComponent<RectTransform>();
-        hintsRT.anchorMin = new Vector2(0.05f, 0.72f);
-        hintsRT.anchorMax = new Vector2(0.95f, 0.84f);
+        hintsRT.anchorMin = new Vector2(0.05f, 0.76f);
+        hintsRT.anchorMax = new Vector2(0.95f, 0.85f);
         hintsRT.offsetMin = hintsRT.offsetMax = Vector2.zero;
         RefreshLabel();
         hintsBtn.onClick.AddListener(ToggleHints);
 
         // ── Controls reference ────────────────────────────────
-        var ctrlHeader = MakeLabel(settingsPanel.transform, "CONTROLS", 6f,
+        MakeLabel(settingsPanel.transform, "CONTROLS", 6f,
             new Color(0.5f, 0.5f, 0.65f), TextAlignmentOptions.Left,
-            new Vector2(0.05f, 0.58f), new Vector2(0.95f, 0.68f));
+            new Vector2(0.05f, 0.66f), new Vector2(0.95f, 0.74f));
 
-        string[] controls = new[]
-        {
-            "WASD / Arrow Keys   Move / Steer bobber",
-            "F                   Cast line",
-            "Space               Minigames",
-            "E                   Fish inventory",
-            "Tab                 Fish compendium",
-            "Q                   Active perks",
-            "Escape              Settings",
-        };
+        // Two-column layout: keys left, actions right
+        string[] keys = { "WASD / Arrows", "F", "Space", "E", "Tab", "Q", "Escape" };
+        string[] actions = { "Move / Steer bobber", "Cast line", "Minigames", "Fish inventory", "Fish compendium", "Active perks", "Settings" };
+        Color rowColor = new Color(0.75f, 0.75f, 0.85f);
 
-        float rowH = 0.062f;
-        float y = 0.57f;
-        foreach (string line in controls)
-        {
-            y -= rowH;
-            MakeLabel(settingsPanel.transform, line, 5.5f, new Color(0.75f, 0.75f, 0.85f),
-                TextAlignmentOptions.Left, new Vector2(0.07f, y), new Vector2(0.95f, y + rowH));
-        }
+        var keysGO = new GameObject("CtrlKeys");
+        keysGO.transform.SetParent(settingsPanel.transform, false);
+        var keysTMP = keysGO.AddComponent<TextMeshProUGUI>();
+        keysTMP.text = string.Join("\n", keys);
+        keysTMP.fontSize = 5.5f;
+        keysTMP.color = rowColor;
+        keysTMP.alignment = TextAlignmentOptions.TopLeft;
+        keysTMP.enableWordWrapping = false;
+        keysTMP.lineSpacing = 8f;
+        var keysRT = keysGO.GetComponent<RectTransform>();
+        keysRT.anchorMin = new Vector2(0.07f, 0.17f);
+        keysRT.anchorMax = new Vector2(0.42f, 0.64f);
+        keysRT.offsetMin = keysRT.offsetMax = Vector2.zero;
+
+        var actionsGO = new GameObject("CtrlActions");
+        actionsGO.transform.SetParent(settingsPanel.transform, false);
+        var actionsTMP = actionsGO.AddComponent<TextMeshProUGUI>();
+        actionsTMP.text = string.Join("\n", actions);
+        actionsTMP.fontSize = 5.5f;
+        actionsTMP.color = rowColor;
+        actionsTMP.alignment = TextAlignmentOptions.TopLeft;
+        actionsTMP.enableWordWrapping = false;
+        actionsTMP.lineSpacing = 8f;
+        var actionsRT = actionsGO.GetComponent<RectTransform>();
+        actionsRT.anchorMin = new Vector2(0.44f, 0.17f);
+        actionsRT.anchorMax = new Vector2(0.97f, 0.64f);
+        actionsRT.offsetMin = actionsRT.offsetMax = Vector2.zero;
 
         // ── Restart Run button ────────────────────────────────
         MakeButton(settingsPanel.transform, "Restart Run",
-            new Vector2(0.1f, 0.03f), new Vector2(0.9f, 0.13f),
+            new Vector2(0.1f, 0.04f), new Vector2(0.9f, 0.13f),
             new Color(0.55f, 0.15f, 0.15f, 1f), () =>
             {
                 SetOpen(false);
